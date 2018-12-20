@@ -1,2 +1,3 @@
-# Zilliqa-Mining-Proxy
-Zilliqa Mining Proxy
+# zilpool
+
+Zilliqa mining pool
