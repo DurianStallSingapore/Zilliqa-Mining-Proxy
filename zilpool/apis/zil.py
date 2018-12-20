@@ -21,15 +21,31 @@ def init_apis(config):
 
     @method
     async def zil_requestWork(pub_key: str, header: str,
-                              seed: str, boundary: str, timeout: int) -> bool:
+                              seed: str, boundary: str,
+                              timeout: int, signature: str) -> bool:
+        assert (len(pub_key) == 68 and
+                len(header) == 66 and
+                len(seed) == 66 and
+                len(boundary) == 66 and
+                timeout > 0 and
+                len(signature) == 66)
         return True
 
     @method
     async def zil_checkWorkStatus(pub_key: str, header: str,
                                   boundary: str, signature: str) -> list:
+        assert (len(pub_key) == 68 and
+                len(header) == 66 and
+                len(boundary) == 66 and
+                len(signature) == 66)
         return [True, "nonce", "header", "mix digest"]
 
     @method
     async def zil_verifyResult(pub_key: str, verified: bool,
                                header: str, boundary: str, signature: str) -> bool:
+        assert (len(pub_key) == 68 and
+                isinstance(verified, bool) and
+                len(header) == 66 and
+                len(boundary) == 66 and
+                len(signature) == 66)
         return True

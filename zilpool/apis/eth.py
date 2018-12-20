@@ -26,8 +26,15 @@ def init_apis(config):
     @method
     async def eth_submitWork(nonce: str, header: str,
                              mix_digest: str, miner_wallet: str) -> bool:
+        assert (len(nonce) == 18 and
+                len(header) == 66 and
+                len(mix_digest) == 66 and
+                len(miner_wallet) == 42)
+
         return True
 
     @method
     async def eth_submitHashrate(hashrate: str, miner_id: str) -> bool:
+        assert (len(hashrate) == 66 and
+                len(miner_id) == 66)
         return True

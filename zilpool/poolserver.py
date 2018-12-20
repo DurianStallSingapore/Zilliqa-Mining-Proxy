@@ -22,7 +22,7 @@ def create_handler(config=None):
     async def api_handle(request: web.Request) -> web.Response:
         request = await request.text()
         response = await async_dispatch(request,
-                                        debug=config.get("debug", False))
+                                        debug=config.debug)
         if response.wanted:
             return web.json_response(response.deserialized(), status=response.http_status)
         else:
@@ -38,12 +38,14 @@ def start(conf_file=None):
     # merge user's config with default.conf
     config = utils.merge_config(conf_file)
 
+    # init database and apis
     init_db(config)
     load_apis(config)
 
-    app = web.Application(debug=config.get("debug", False))
-
+    # init app
+    app = web.Application(debug=config.debug)
     app.router.add_post(config.api_server.get("path", "/api"),
                         create_handler(config))
 
+    # start ioloop
     web.run_app(app, port=config.api_server.get("port", "4202"))
