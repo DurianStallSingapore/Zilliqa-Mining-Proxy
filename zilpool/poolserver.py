@@ -14,8 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from aiohttp import web
 from jsonrpcserver import async_dispatch
+
+
+# setup logger
+FORMAT = "[%(asctime)s %(levelname)-6s %(filename)s:%(lineno)s] %(message)s"
+logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 
 def create_handler(config=None):
@@ -37,6 +43,9 @@ def start(conf_file=None):
 
     # merge user's config with default.conf
     config = utils.merge_config(conf_file)
+
+    level = config.get("logging", "info").upper()
+    logging.getLogger().setLevel(level=level)
 
     # init database and apis
     init_db(config)
