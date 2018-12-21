@@ -13,6 +13,7 @@ A pool proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
     cd zilpool
     python setup.py develop 
     ```
+
 3. Change settings
     ```yaml
     # settings for zilpool
