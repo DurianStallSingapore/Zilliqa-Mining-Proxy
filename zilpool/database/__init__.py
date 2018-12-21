@@ -1,5 +1,3 @@
 # -*- coding: utf-8 -*-
 
-
-def init_db(config=None):
-    pass
+from .basemodel import db, init_db

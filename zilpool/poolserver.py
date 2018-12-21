@@ -28,7 +28,9 @@ def create_handler(config=None):
     async def api_handle(request: web.Request) -> web.Response:
         request = await request.text()
         response = await async_dispatch(request,
-                                        debug=config.debug)
+                                        debug=config.debug,
+                                        basic_logging=False,
+                                        trim_log_values=True)
         if response.wanted:
             return web.json_response(response.deserialized(), status=response.http_status)
         else:
@@ -37,7 +39,7 @@ def create_handler(config=None):
 
 
 def start(conf_file=None):
-    from . import utils
+    from .common import utils
     from .apis import load_apis
     from .database import init_db
 

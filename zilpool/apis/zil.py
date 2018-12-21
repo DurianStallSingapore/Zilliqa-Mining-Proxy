@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from jsonrpcserver import method
 
 
 def init_apis(config):
+    from ..database import pow, zilnode
 
     @method
     async def zil_requestWork(pub_key: str, header: str,
@@ -29,16 +31,28 @@ def init_apis(config):
                 len(boundary) == 66 and
                 timeout > 0 and
                 len(signature) == 66)
-        return True
+
+        node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
+        if not (node and node.authorized):
+            logging.warning(f"unauthorized public key: {pub_key}")
+            return False
+
+        work = pow.PowWork(header, seed, boundary,
+                           pub_key=pub_key, signature=signature, timeout=timeout)
+        if not work.verify_signature():
+            logging.warning(f"wrong signature: {work}")
+            return False
+
+        return work.save_to_db()
 
     @method
     async def zil_checkWorkStatus(pub_key: str, header: str,
-                                  boundary: str, signature: str) -> list:
+                                  boundary: str, signature: str) -> [list, tuple]:
         assert (len(pub_key) == 68 and
                 len(header) == 66 and
                 len(boundary) == 66 and
                 len(signature) == 66)
-        return [True, "nonce", "header", "mix digest"]
+        return True, "nonce", "header", "mix digest"
 
     @method
     async def zil_verifyResult(pub_key: str, verified: bool,

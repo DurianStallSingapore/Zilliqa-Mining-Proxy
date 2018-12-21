@@ -20,10 +20,11 @@ import collections
 
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
+app_dir = os.path.join(cur_dir, "..")    # warning: take care
 
 
 def app_path(*args) -> str:
-    return os.path.join(cur_dir, *args)
+    return os.path.join(app_dir, *args)
 
 
 class MagicDict(dict):
