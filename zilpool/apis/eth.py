@@ -14,22 +14,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
+from typing import List, Tuple
 from jsonrpcserver import method
+
+from zilpool.database import pow
 
 
 def init_apis(config):
-    @method
-    async def eth_getWork() -> List[str]:
-        return ["header", "seed", "boundary"]
+    no_work = ("", "", "")
 
     @method
-    async def eth_submitWork(nonce: str, header: str,
+    async def eth_getWork() -> [List, Tuple]:
+        min_fee = config.mining["min_fee"]
+        max_dispatch = config.mining["max_dispatch"]
+        work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
+                                         max_dispatch=max_dispatch)
+        if not work:
+            return no_work
+
+        if work.increase_dispatched():
+            return work.header, work.seed, work.boundary
+        return no_work
+
+    @method
+    async def eth_submitWork(nonce: str, header: str, boundary: str,
                              mix_digest: str, miner_wallet: str) -> bool:
         assert (len(nonce) == 18 and
                 len(header) == 66 and
+                len(boundary) == 66 and
                 len(mix_digest) == 66 and
                 len(miner_wallet) == 42)
+
+        work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary)
+        if not work:
+            return False
+
+        # verify result
 
         return True
 

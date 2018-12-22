@@ -7,11 +7,13 @@ Licensed under Apache License, Version 2.0.
 """
 
 from zilpool import version
-from setuptools import setup, find_packages
+from setuptools import setup
 
-packages = find_packages(exclude=[])
+packages = ["zilpool"]
+package_data = {"zilpool": ["*.conf", "tests/*"]}
 
-install_requires = ["pyyaml", "jsonrpcserver", "aiohttp", "pyMongo"]
+tests_require = ["pytest"]
+install_requires = ["pyyaml", "jsonrpcserver", "aiohttp", "mongoengine", 'pymongo']
 
 setup(name="zilpool",
       version=version,
@@ -28,6 +30,7 @@ setup(name="zilpool",
       license="Apache Software License",
       packages=packages,
       include_package_data=True,
-      zip_safe=False,
+      package_data=package_data,
       install_requires=install_requires,
+      tests_require=tests_require,
       )

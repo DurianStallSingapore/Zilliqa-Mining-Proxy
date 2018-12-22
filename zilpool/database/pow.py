@@ -15,69 +15,71 @@
 # limitations under the License.
 
 import logging
-from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
-import pymongo as mg
+import mongoengine as db
+from mongoengine import Q
 
-from .basemodel import db_required, MongoDocument
+from .basemodel import ModelMixin
 
 
-class PowWork(MongoDocument):
-    _collection = "zil_pow_works"
-    _indexes = [
-        # datetime index
-        ([("start_time", mg.DESCENDING)],
-         {"name": "start time"}),
-        # header_seed_boundary text index
-        ([("header", mg.TEXT), ("seed", mg.TEXT), ("boundary", mg.TEXT)],
-         {"name": "header_seed_boundary"}),
-    ]
-    _fields = ("header", "seed", "boundary", "pub_key",
-               "start_time", "timeout", "finished",
-               "miner", "pow_fee")
+class PowWork(ModelMixin, db.Document):
+    header = db.StringField(max_length=128, required=True)
+    seed = db.StringField(max_length=128, required=True)
+    boundary = db.StringField(max_length=128, required=True)
+    pub_key = db.StringField(max_length=128)
+    signature = db.StringField(max_length=128)
 
-    def __init__(self, header: str, seed: str, boundary: str,
-                 pub_key: Optional[str]=None,
-                 signature: Optional[str]=None,
-                 start_time=None, timeout=120, finished=0,
-                 miner="", pow_fee=0.0, **kwargs):
-        """ Create a PoW Work.
-        :param header: the header hash
-        :param seed:
-        :param boundary:
-        :param pub_key:
-        :param signature:
-        :param start_time:
-        :param timeout: work timeout in seconds
-        :param finished: finished time in seconds, 0 means not finished
-        :param miner: the miner's zil wallet address who done the work
-        :param pow_fee: get new works sort by fee
-        """
-        super().__init__(
-            header=header, seed=seed, boundary=boundary,
-            pub_key=pub_key, signature=signature,
-            start_time=start_time or datetime.now(), timeout=timeout,
-            finished=finished, pow_fee=pow_fee, miner=miner,
-            **kwargs
-        )
+    start_time = db.DateTimeField(default=datetime.utcnow)
+    expire_time = db.DateTimeField()
+
+    finished = db.BooleanField(default=False)
+
+    miner = db.StringField(max_length=128)
+    pow_fee = db.FloatField(default=0.0)
+    dispatched = db.IntField(default=0)
+
+    meta = {"collection": "zil_pow_works"}
+
+    @classmethod
+    def new_work(cls, header: str, seed: str, boundary: str,
+                 pub_key="", signature="", timeout=120):
+        start_time = datetime.utcnow()
+        expire_time = start_time + timedelta(seconds=timeout)
+
+        return cls(header=header, seed=seed, boundary=boundary,
+                   pub_key=pub_key, signature=signature,
+                   start_time=start_time, expire_time=expire_time)
+
+    @classmethod
+    def get_new_works(cls, count=1, min_fee=0.0, max_dispatch=None):
+        query = Q(finished=False) & Q(pow_fee__gte=min_fee) & Q(expire_time__gte=datetime.utcnow())
+        if max_dispatch is not None:
+            query = query & Q(dispatched__lt=max_dispatch)
+
+        cursor = cls.objects(query).order_by("-pow_fee", "expire_time", "dispatched")
+        works = cursor.limit(count).all()
+        if count == 1:
+            return works[0] if works else None
+        return works
+
+    @classmethod
+    def find_work_by_header_boundary(cls, header: str, boundary: str):
+        query = Q(finished=False) & Q(header=header) & Q(boundary=boundary) & \
+                Q(expire_time__gte=datetime.utcnow())
+        cursor = cls.objects(query).order_by("expire_time")
+        return cursor.first()
 
     def verify_signature(self)->bool:
         return True
 
-    @db_required
-    def save_to_db(self):
-        logging.info(f"insert work {self}")
-        res = self.collection.insert_one(self.doc)
-        logging.info(f"work saved {res.inserted_id}")
-        return res.acknowledged
-
-    # class methods
-    @classmethod
-    @db_required
-    def get_new_works(cls, count=1, min_fee=0.0):
-        pass
+    def increase_dispatched(self, count=1):
+        res = self.update(inc__dispatched=count)
+        if res is None:
+            return None
+        self.reload()
+        return self
 
 
-class PowResult(MongoDocument):
-    _collection = "zil_pow_results"
+class PowResult(ModelMixin, db.Document):
+    meta = {"collection": "zil_pow_results"}

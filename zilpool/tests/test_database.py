@@ -14,12 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 
-import mongoengine as db
+from zilpool.database import init_db
+from zilpool.tests import config
 
-from .basemodel import ModelMixin
 
+class TestDatabase:
+    init_db(config)
 
-class Miner(ModelMixin, db.Document):
-    meta = {"collection": "zil_miners"}
+    def test_init(self):
+        pass
 
+    def test_zil_nodes(self):
+        from zilpool.database.zilnode import ZilNode
+
+    def test_pow_work(self):
+        from zilpool.database.pow import PowWork, PowResult

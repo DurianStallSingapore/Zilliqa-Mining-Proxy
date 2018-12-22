@@ -17,9 +17,11 @@
 import logging
 from jsonrpcserver import method
 
+from ..database import pow, zilnode
+
 
 def init_apis(config):
-    from ..database import pow, zilnode
+    work_not_done = (False, "", "", "")
 
     @method
     async def zil_requestWork(pub_key: str, header: str,
@@ -37,13 +39,15 @@ def init_apis(config):
             logging.warning(f"unauthorized public key: {pub_key}")
             return False
 
-        work = pow.PowWork(header, seed, boundary,
-                           pub_key=pub_key, signature=signature, timeout=timeout)
+        work = pow.PowWork.new_work(header, seed, boundary,
+                                    pub_key=pub_key, signature=signature,
+                                    timeout=timeout)
         if not work.verify_signature():
             logging.warning(f"wrong signature: {work}")
             return False
 
-        return work.save_to_db()
+        work = work.save()
+        return work is not None
 
     @method
     async def zil_checkWorkStatus(pub_key: str, header: str,

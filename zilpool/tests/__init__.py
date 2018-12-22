@@ -14,12 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+from zilpool.common.utils import merge_config
 
-import mongoengine as db
-
-from .basemodel import ModelMixin
-
-
-class Miner(ModelMixin, db.Document):
-    meta = {"collection": "zil_miners"}
-
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+conf_file = os.path.join(cur_dir, "database/debug.conf")
+config = merge_config(conf_file)

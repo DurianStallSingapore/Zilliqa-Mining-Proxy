@@ -22,29 +22,44 @@ import sys
 import argparse
 
 from zilpool.common import utils
-from zilpool.database.basemodel import init_db, drop_collection
+from zilpool.database.basemodel import db, init_db, get_all_models, drop_all
 from zilpool.database import zilnode
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(cur_dir)
 
-config = utils.merge_config("debug.conf")
 
-init_db(config)
+def drop_col(params=None, force=False):
+    all_collections = [cls._get_collection_name() for cls in get_all_models()]
 
-all_collections = ["zil_nodes", "zil_pow_works", "zil_pow_results", "zil_miners"]
-
-
-def drop_col(params=None):
     if not params:
-        print(f"choice collections: {all_collections}")
+        print(f"pls choice collections: {all_collections}")
         return
+
+    def confirm():
+        ans = "y"
+        if not force:
+            ans = input(f"Are you sure to drop data y/N? ")
+        return ans == "y"
+
     if params[0] == "all":
-        params = all_collections
+        print("drop all collections")
+        if confirm():
+            print("Done")
+            drop_all()
+        else:
+            print("Skipped")
+        return
 
     for col in params:
-        res = drop_collection(col)
-        print(f"{'PASSED' if res['ok'] else 'FAILED'} drop collection [{col}]: {res}")
+        db_collection = db.get_collection(col)
+
+        print(f"drop collection {db_collection.name}")
+        if confirm():
+            db_collection.drop()
+            print("Done")
+        else:
+            print("Skipped")
 
 
 def build_debug_db(params=None):
@@ -54,18 +69,26 @@ def build_debug_db(params=None):
     for node_data in debug.nodes:
         pub_key, pow_fee, authorized = node_data
         node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
-        res = node.save_to_db()
+        res = node.save()
         print(f"create pub_key: {pub_key} result: {res}")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", help="sub command: drop, create")
+    parser.add_argument("--conf", help="conf file", default="debug.conf")
     parser.add_argument("params", nargs=argparse.REMAINDER)
 
     args = parser.parse_args()
+
+    args.conf = os.path.abspath(args.conf)
+    print(f"config file: {args.conf}")
+    config = utils.merge_config(args.conf)
+    print(f"database: {config.database['uri']}")
+    init_db(config)
+
     if args.command == "drop":
-        drop_col(args.params)
+        drop_col(args.params, force=False)
     elif args.command == "create":
         build_debug_db(args.params)
     else:
