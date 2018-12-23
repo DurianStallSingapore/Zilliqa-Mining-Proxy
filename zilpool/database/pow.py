@@ -73,8 +73,13 @@ class PowWork(ModelMixin, db.Document):
     def verify_signature(self)->bool:
         return True
 
-    def increase_dispatched(self, count=1):
-        res = self.update(inc__dispatched=count)
+    def increase_dispatched(self, count=1, inc_expire_seconds=1):
+        if inc_expire_seconds > 0:
+            new_expire_time = self.expire_time + timedelta(seconds=inc_expire_seconds)
+            res = self.update(inc__dispatched=count, set__expire_time=new_expire_time)
+        else:
+            res = self.update(inc__dispatched=count)
+
         if res is None:
             return None
         self.reload()

@@ -14,4 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 
+from zilpool.common.utils import merge_config
+
+cur_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+def get_config(conf):
+    conf_file = os.path.join(cur_dir, conf)
+    return merge_config(conf_file)
+
+
+def get_database_debug_config():
+    return get_config("database/debug.conf")
+
+
+def get_pool_config():
+    return get_config("../../../pool.conf")
+
+
+def get_default_config():
+    return get_config("../default.conf")

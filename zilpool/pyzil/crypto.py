@@ -34,7 +34,7 @@ def rand_bytes(n_bytes=TOKEN_NUM_BYTES) -> bytes:
     return secrets.token_bytes(n_bytes)
 
 
-def rand_hex_str(n_len=TOKEN_NUM_BYTES, prefix="") -> str:
+def rand_hex_str(n_len=TOKEN_STR_LENGTH, prefix="") -> str:
     if n_len <= 0:
         raise ValueError("0 and negative argument not allowed")
     return prefix + (secrets.token_hex(n_len // 2 + 1)[:n_len])
