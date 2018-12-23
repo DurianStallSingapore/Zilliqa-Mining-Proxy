@@ -16,7 +16,7 @@ tests_require = ["pytest"]
 install_requires = [
     "pyyaml", "jsonrpcserver", "aiohttp",
     "mongoengine", "pymongo",
-    "coincurve",
+    "coincurve", "pyethash", "eth-hash[pycryptodome]",
 ]
 
 setup(

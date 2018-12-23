@@ -14,10 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from typing import List, Tuple
 from jsonrpcserver import method
 
 from zilpool.database import pow
+from zilpool.pyzil import ethash
+from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
+from zilpool.pyzil.crypto import hex_str_to_int as h2i
 
 
 def init_apis(config):
@@ -50,6 +54,15 @@ def init_apis(config):
             return False
 
         # verify result
+        seed, header = h2b(work.seed), h2b(work.header)
+        nonce, mix_digest, boundary = h2i(nonce), h2b(mix_digest), h2b(boundary)
+
+        block_num = ethash.seed_to_block_num(seed)
+        if not ethash.verify_pow_work(block_num, header, mix_digest, nonce, boundary):
+            logging.warning(f"wrong result from {miner_wallet}")
+            return False
+
+        # todo: save to database
 
         return True
 
