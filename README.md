@@ -9,9 +9,9 @@ A pool proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
 1. Setup [Python3.6+](https://www.python.org/downloads/) and [MongoDB](https://docs.mongodb.com/manual/installation/)
 2. Clone zil from Github, setup Python requirements
     ```bash
-    git clone https://github.com/deepgully/zilpool
-    cd zilpool
-    python setup.py develop 
+    git clone https://github.com/jiayaoqijia/Zilliqa-Mining-Proxy
+    cd Zilliqa-Mining-Proxy
+    sudo python setup.py develop 
     ```
 
 3. Change settings
