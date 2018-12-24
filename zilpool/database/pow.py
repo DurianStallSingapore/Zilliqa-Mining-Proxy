@@ -17,27 +17,27 @@
 import logging
 from datetime import datetime, timedelta
 
-import mongoengine as db
+import mongoengine as mg
 from mongoengine import Q
 
 from .basemodel import ModelMixin
 
 
-class PowWork(ModelMixin, db.Document):
-    header = db.StringField(max_length=128, required=True)
-    seed = db.StringField(max_length=128, required=True)
-    boundary = db.StringField(max_length=128, required=True)
-    pub_key = db.StringField(max_length=128)
-    signature = db.StringField(max_length=128)
+class PowWork(ModelMixin, mg.Document):
+    header = mg.StringField(max_length=128, required=True)
+    seed = mg.StringField(max_length=128, required=True)
+    boundary = mg.StringField(max_length=128, required=True)
+    pub_key = mg.StringField(max_length=128)
+    signature = mg.StringField(max_length=128)
 
-    start_time = db.DateTimeField(default=datetime.utcnow)
-    expire_time = db.DateTimeField()
+    start_time = mg.DateTimeField(default=datetime.utcnow)
+    expire_time = mg.DateTimeField()
 
-    finished = db.BooleanField(default=False)
+    finished = mg.BooleanField(default=False)
 
-    miner = db.StringField(max_length=128)
-    pow_fee = db.FloatField(default=0.0)
-    dispatched = db.IntField(default=0)
+    miner_wallet = mg.StringField(max_length=128)
+    pow_fee = mg.FloatField(default=0.0)
+    dispatched = mg.IntField(default=0)
 
     meta = {"collection": "zil_pow_works"}
 
@@ -86,5 +86,20 @@ class PowWork(ModelMixin, db.Document):
         return self
 
 
-class PowResult(ModelMixin, db.Document):
+class PowResult(ModelMixin, mg.Document):
     meta = {"collection": "zil_pow_results"}
+
+    header = mg.StringField(max_length=128, required=True)
+    seed = mg.StringField(max_length=128, required=True)
+    boundary = mg.StringField(max_length=128, required=True)
+    pub_key = mg.StringField(max_length=128, required=True)
+
+    mix_digest = mg.StringField(max_length=128, required=True)
+    nonce = mg.StringField(max_length=128, required=True)
+
+    finished_time = mg.DateTimeField(default=datetime.utcnow)
+    verified_time = mg.DateTimeField()
+
+    verified = mg.BooleanField(default=False)
+    miner_wallet = mg.StringField(max_length=128)
+    worker_name = mg.StringField(max_length=64, default="")

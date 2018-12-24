@@ -42,12 +42,17 @@ def init_apis(config):
 
     @method
     async def eth_submitWork(nonce: str, header: str, boundary: str,
-                             mix_digest: str, miner_wallet: str) -> bool:
+                             mix_digest: str, miner_wallet: str,
+                             worker_name: str) -> bool:
         assert (len(nonce) == 18 and
                 len(header) == 66 and
                 len(boundary) == 66 and
                 len(mix_digest) == 66 and
-                len(miner_wallet) == 42)
+                len(worker_name) < 64)
+
+        nonce_int, mix_digest_bytes, boundary_bytes = h2i(nonce), h2b(mix_digest), h2b(boundary)
+        miner_wallet_bytes = h2b(miner_wallet)
+        worker_name = worker_name if len(worker_name) > 0 else "default_worker"
 
         work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary)
         if not work:
@@ -55,10 +60,9 @@ def init_apis(config):
 
         # verify result
         seed, header = h2b(work.seed), h2b(work.header)
-        nonce, mix_digest, boundary = h2i(nonce), h2b(mix_digest), h2b(boundary)
 
         block_num = ethash.seed_to_block_num(seed)
-        if not ethash.verify_pow_work(block_num, header, mix_digest, nonce, boundary):
+        if not ethash.verify_pow_work(block_num, header, mix_digest_bytes, nonce_int, boundary_bytes):
             logging.warning(f"wrong result from {miner_wallet}")
             return False
 
@@ -67,7 +71,10 @@ def init_apis(config):
         return True
 
     @method
-    async def eth_submitHashrate(hashrate: str, miner_id: str) -> bool:
+    async def eth_submitHashrate(hashrate: str, miner_wallet: str, worker_name: str) -> bool:
         assert (len(hashrate) == 66 and
-                len(miner_id) == 66)
+                len(miner_wallet) == 66 and
+                len(worker_name) < 64)
+        hashrate_int, miner_wallet_bytes = h2i(hashrate), h2b(miner_wallet)
+        worker_name = worker_name if len(worker_name) > 0 else "default_worker"
         return True

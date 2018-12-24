@@ -14,12 +14,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import datetime
 
-import mongoengine as db
+import mongoengine as mg
 
 from .basemodel import ModelMixin
 
 
-class Miner(ModelMixin, db.Document):
+"""
+A Miner -> Many Workers
+A Worker -> Time series of hashrate
+"""
+
+
+class Miner(ModelMixin, mg.Document):
     meta = {"collection": "zil_miners"}
 
+    wallet_address = mg.StringField(max_length=128, required=True, unique=True)
+    rewards = mg.FloatField(default=0.0)
+    authorized = mg.BooleanField(default=True)
+
+    nick_name = mg.StringField(max_length=64, default="")
+    email = mg.StringField(max_length=128)
+    join_date = mg.DateTimeField(default=datetime.utcnow)
+    last_updated = mg.DateTimeField(default=datetime.utcnow)
+
+
+class Worker(ModelMixin, mg.Document):
+    meta = {"collection": "zil_mine_workers"}
+
+    wallet_address = mg.StringField(max_length=128, required=True)
+    worker_name = mg.StringField(max_length=64, default="")
+
+    work_submitted = mg.IntField(default=0)
+    work_failed = mg.IntField(default=0)
+    work_finished = mg.IntField(default=0)
+    work_verified = mg.IntField(default=0)
+
+
+class HashRate(ModelMixin, mg.Document):
+    meta = {"collection": "zil_mine_hashrate"}
+
+    wallet_address = mg.StringField(max_length=128, required=True)
+    worker_name = mg.StringField(max_length=64, default="")
+
+    hashrate = mg.FloatField(default=0.0, required=True)
+    updated_time = mg.DateTimeField(default=datetime.utcnow)

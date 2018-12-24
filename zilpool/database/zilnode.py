@@ -16,21 +16,23 @@
 
 import logging
 
-import mongoengine as db
+import mongoengine as mg
 
 from .basemodel import ModelMixin
 
 
-class ZilNode(ModelMixin, db.Document):
+class ZilNode(ModelMixin, mg.Document):
     meta = {"collection": "zil_nodes"}
 
-    pub_key = db.StringField(max_length=128, required=True, unique=True)
-    pow_fee = db.FloatField(default=0.0)
-    authorized = db.BooleanField(default=False)
+    pub_key = mg.StringField(max_length=128, required=True, unique=True)
+    pow_fee = mg.FloatField(default=0.0)
+    authorized = mg.BooleanField(default=False)
+    balance = mg.FloatField(default=0.0)
+    email = mg.StringField(max_length=128)
 
     @classmethod
     def get_by_pub_key(cls, pub_key, authorized=True):
-        query = db.Q(pub_key=pub_key)
+        query = mg.Q(pub_key=pub_key)
         if authorized is not None:
-            query = query & db.Q(authorized=authorized)
+            query = query & mg.Q(authorized=authorized)
         return cls.objects(query).first()
