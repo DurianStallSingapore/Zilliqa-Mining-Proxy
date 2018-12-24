@@ -1,6 +1,4 @@
-# zilpool
-
-Zilliqa mining pool
+# Zilliqa Mining Proxy
 
 A pool proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
 
