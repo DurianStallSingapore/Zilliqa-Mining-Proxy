@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import os
+import re
 import yaml
 import collections
 
@@ -67,3 +68,10 @@ def dict_merge(dct, merge_dct) -> None:
             dict_merge(dct[k], merge_dct[k])
         else:
             dct[k] = merge_dct[k]
+
+
+re_valid_str = re.compile(r"^[a-zA-Z0-9_.-]*$")
+
+
+def is_valid_str(input_str: str) -> bool:
+    return re_valid_str.match(input_str) is not None

@@ -1,42 +1,59 @@
+########################################
+# zil_requestWork
+# DATA, 33 Bytes - the Zilliqa node PubKey
+# DATA, 32 Bytes - current block header pow-hash
+# DATA, 32 Bytes - the seed hash used for the DAG.
+# DATA, 32 Bytes - the boundary condition ("target"), 2^256 / difficulty.
+# Mining Time - Integer - the mining time in seconds.
+# DATA, 32 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "zil_requestWork", "params": [
-"0x000000000000000000000000000000000000000000000000000000000000000000",
- "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
- "0x5EED00000000000000000000000000005EED0000000000000000000000000000",
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000",
- 600,
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000"
+ "0x02A349FA10F0E6A614A38D6033588A422357F2C60AF2EEBAE15D06498DF8AF0B05",
+ "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
+ "0x0000000000000000000000000000000000000000000000000000000000000000",
+ "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+ 120,
+ "0x0000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
-###
-
+########################################
+# zil_checkWorkStatus
+# DATA, 33 Bytes - the Zilliqa node PubKey
+# DATA, 32 Bytes - current block header pow-hash
+# DATA, 32 Bytes - the boundary condition ("target")
+# DATA, 32 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "zil_checkWorkStatus", "params": [
-"0x0200DA41ADE7291EE9DD37E8A226CD9695C286896553B2F2E67A3CE97C8E85CE05",
- "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
- "0x5EED00000000000000000000000000005EED0000000000000000000000000000",
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000"
+ "0x02A349FA10F0E6A614A38D6033588A422357F2C60AF2EEBAE15D06498DF8AF0B05",
+ "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
+ "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+ "0x0000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
 
-###
-
+########################################
+# zil_verifyResult
+# DATA, 33 Bytes - the Zilliqa node PubKey
+# Boolean, 1 Bytes - the PoW verify pass or fail
+# DATA, 32 Bytes - The header's pow-hash (256 bits)
+# DATA, 32 Bytes - the boundary condition ("target")
+# DATA, 32 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "zil_verifyResult", "params": [
-"0x0200DA41ADE7291EE9DD37E8A226CD9695C286896553B2F2E67A3CE97C8E85CE05",
+ "0x02A349FA10F0E6A614A38D6033588A422357F2C60AF2EEBAE15D06498DF8AF0B05",
  true,
- "0x5EED00000000000000000000000000005EED0000000000000000000000000000",
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000",
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000"
+ "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
+ "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+ "0x0000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
-###
+########################################

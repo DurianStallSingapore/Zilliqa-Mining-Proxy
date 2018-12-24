@@ -30,6 +30,9 @@ class ZilNode(ModelMixin, mg.Document):
     balance = mg.FloatField(default=0.0)
     email = mg.StringField(max_length=128)
 
+    def __str__(self):
+        return f"[ZilNode: {self.pub_key}, {self.authorized}]"
+
     @classmethod
     def get_by_pub_key(cls, pub_key, authorized=True):
         query = mg.Q(pub_key=pub_key)

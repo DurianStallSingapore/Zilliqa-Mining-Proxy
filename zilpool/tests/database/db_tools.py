@@ -22,8 +22,10 @@ import sys
 import argparse
 
 from zilpool.common import utils
+from zilpool.pyzil import crypto, ethash
 from zilpool.database.basemodel import db, init_db, get_all_models, drop_all
-from zilpool.database import zilnode
+from zilpool.database import zilnode, miner, pow
+import zilpool.tests.database.db_debug_data as debug_data
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(cur_dir)
@@ -63,19 +65,103 @@ def drop_col(params=None, force=False):
 
 
 def build_debug_db(params=None):
-    import db_debug_data as debug
-
     print("add nodes")
-    for node_data in debug.nodes:
+    for node_data in debug_data.nodes:
         pub_key, pow_fee, authorized = node_data
         node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
         res = node.save()
-        print(f"create pub_key: {pub_key} result: {res}")
+        print(f"create pub_key: {pub_key}")
+        print(f"result: {res}")
+
+    print("add miners")
+    for wallet, worker in debug_data.miners:
+        m = miner.Miner.get_or_create(wallet, worker)
+        print(f"miner added: {m}")
+
+
+def build_pow_work(params=None):
+    if not params:
+        print("sub commands:")
+        print("    new [block_num] [difficulty] [timeout]")
+        print("    list [pub_key]")
+        return
+
+    def add_new_work():
+        print("work new [block_num] [difficulty] [timeout]")
+
+        block_num = int(params[1]) if len(params) > 1 else 42
+        difficulty = int(params[2]) if len(params) > 2 else 5
+        timeout = int(params[3]) if len(params) > 3 else 600
+
+        print(f"Generate a work for block {block_num}, difficulty {difficulty}")
+        header = crypto.rand_hex_str_0x(64)
+        seed = crypto.bytes_to_hex_str_0x(ethash.block_num_to_seed(block_num))
+        boundary = crypto.bytes_to_hex_str_0x(ethash.difficulty_to_boundary(difficulty))
+
+        print(f"    header    : {header}")
+        print(f"    seed      : {seed}")
+        print(f"    boundary  : {boundary}")
+
+        pub_key = debug_data.nodes[0][0]
+        print(f"save work, timeout = {timeout}, pub_key = {pub_key}")
+        work = pow.PowWork.new_work(header, seed, boundary,
+                                    pub_key=pub_key, signature="",
+                                    timeout=timeout)
+        work = work.save()
+        if work:
+            print(f"success, {work}")
+        else:
+            print(f"failed")
+
+    def list_works():
+        pub_key = params[1] if len(params) > 1 else None
+        if not pub_key:
+            print("list all works")
+            works = pow.PowWork.objects().all()
+        else:
+            print(f"list works from pub_key: {pub_key}")
+            works = pow.PowWork.objects(pub_key=pub_key).all()
+
+        for work in works:
+            print(f"    {work}")
+
+    if params[0] == "new":
+        add_new_work()
+    elif params[0] == "list":
+        list_works()
+
+
+def show_miners(params=None):
+    if not params:
+        print("sub commands:")
+        print("    list [wallet]")
+        return
+
+    def list_miners():
+        wallet = params[1] if len(params) > 1 else None
+        if not wallet:
+            print("list all miners")
+            miners = miner.Miner.objects().all()
+            for m in miners:
+                print(f"    {m}")
+        else:
+            print(f"list workers of miner: {wallet}")
+            m = miner.Miner.objects(wallet_address=wallet).first()
+            if m is None:
+                print("  miner not found")
+                return
+            print(f"  {m}")
+            workers = miner.Worker.objects(wallet_address=wallet).all()
+            for worker in workers:
+                print(f"    {worker}")
+
+    if params[0] == "list":
+        list_miners()
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", help="sub command: drop, create")
+    parser.add_argument("command", help="sub command: drop, build, work, miner")
     parser.add_argument("--conf", help="conf file", default="debug.conf")
     parser.add_argument("params", nargs=argparse.REMAINDER)
 
@@ -89,8 +175,12 @@ def main():
 
     if args.command == "drop":
         drop_col(args.params, force=False)
-    elif args.command == "create":
+    elif args.command == "build":
         build_debug_db(args.params)
+    elif args.command == "work":
+        build_pow_work(args.params)
+    elif args.command == "miner":
+        show_miners(args.params)
     else:
         parser.print_help()
 

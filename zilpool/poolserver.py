@@ -17,6 +17,7 @@
 import logging
 from aiohttp import web
 from jsonrpcserver import async_dispatch
+from jsonrpcserver.response import ExceptionResponse
 
 
 # setup logger
@@ -31,6 +32,9 @@ def create_handler(config=None):
                                         debug=config.debug,
                                         basic_logging=False,
                                         trim_log_values=True)
+
+        if isinstance(response, ExceptionResponse):
+            logging.error("Server Error", exc_info=response.exc)
         if response.wanted:
             return web.json_response(response.deserialized(), status=response.http_status)
         else:

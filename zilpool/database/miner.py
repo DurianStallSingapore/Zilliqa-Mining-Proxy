@@ -32,12 +32,29 @@ class Miner(ModelMixin, mg.Document):
 
     wallet_address = mg.StringField(max_length=128, required=True, unique=True)
     rewards = mg.FloatField(default=0.0)
+    paid = mg.FloatField(default=0.0)
     authorized = mg.BooleanField(default=True)
 
     nick_name = mg.StringField(max_length=64, default="")
     email = mg.StringField(max_length=128)
     join_date = mg.DateTimeField(default=datetime.utcnow)
     last_updated = mg.DateTimeField(default=datetime.utcnow)
+
+    def __str__(self):
+        return f"[Miner: {self.wallet_address}, {self.authorized}]"
+
+    @classmethod
+    def get_or_create(cls, wallet_address: str, worker_name: str):
+        worker = Worker.get_or_create(wallet_address, worker_name)
+        if worker:
+            miner = cls.objects(
+                wallet_address=wallet_address
+            ).modify(
+                upsert=True, new=True,
+                set__wallet_address=wallet_address
+            )
+            return miner
+        return None
 
 
 class Worker(ModelMixin, mg.Document):
@@ -50,6 +67,31 @@ class Worker(ModelMixin, mg.Document):
     work_failed = mg.IntField(default=0)
     work_finished = mg.IntField(default=0)
     work_verified = mg.IntField(default=0)
+
+    def __str__(self):
+        return f"[Worker: {self.worker_name}.{self.wallet_address}]"
+
+    @classmethod
+    def get_or_create(cls, wallet_address: str, worker_name: str):
+        worker = cls.objects(
+            wallet_address=wallet_address,
+            worker_name=worker_name
+        ).modify(
+            upsert=True, new=True,
+            set__wallet_address=wallet_address,
+            set__worker_name=worker_name
+        )
+        return worker
+
+    def update_stat(self, inc_submitted=0, inc_failed=0, inc_finished=0, inc_verified=0):
+        update_kwargs = {
+            "inc__work_submitted": inc_submitted,
+            "inc__work_failed": inc_failed,
+            "inc__work_finished": inc_finished,
+            "inc__work_verified": inc_verified,
+        }
+        update_kwargs = {key: value for (key, value) in update_kwargs.items() if value > 0}
+        return self.update(**update_kwargs)
 
 
 class HashRate(ModelMixin, mg.Document):

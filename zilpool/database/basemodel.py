@@ -16,6 +16,7 @@
 
 import logging
 from functools import wraps
+from inspect import isclass
 
 from mongoengine import connect, Document, OperationError
 from mongoengine.connection import get_db
@@ -72,8 +73,15 @@ class ModelMixin:
 
 
 def get_all_models():
-    from .miner import Miner
-    from .pow import PowWork, PowResult
-    from .zilnode import ZilNode
+    from . import miner
+    from . import pow
+    from . import zilnode
 
-    return Miner, PowWork, PowResult, ZilNode
+    db_models = []
+    for module in [miner, pow, zilnode]:
+        for name in dir(module):
+            obj = getattr(module, name)
+            if isclass(obj) and issubclass(obj, Document):
+                db_models.append(obj)
+
+    return list(set(db_models))

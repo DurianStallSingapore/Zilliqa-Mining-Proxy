@@ -40,6 +40,9 @@ def rand_hex_str(n_len=TOKEN_STR_LENGTH, prefix="") -> str:
     return prefix + (secrets.token_hex(n_len // 2 + 1)[:n_len])
 
 
+rand_hex_str_0x = partial(rand_hex_str, prefix="0x")
+
+
 def sha256(*bytes_hex, encoding="utf-8") -> bytes:
     m = hashlib.sha256()
     for b in bytes_hex:
@@ -115,7 +118,7 @@ class ZilKey:
     def _generate_keys(self):
         if self.str_private:
             self.private_key = coincurve.PrivateKey.from_int(
-                hex_str_to_int(self.str_private, "big")
+                hex_str_to_int(self.str_private)
             )
 
         if self.str_pub:

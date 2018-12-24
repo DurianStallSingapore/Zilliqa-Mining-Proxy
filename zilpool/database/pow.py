@@ -21,6 +21,7 @@ import mongoengine as mg
 from mongoengine import Q
 
 from .basemodel import ModelMixin
+from .miner import Miner
 
 
 class PowWork(ModelMixin, mg.Document):
@@ -40,6 +41,9 @@ class PowWork(ModelMixin, mg.Document):
     dispatched = mg.IntField(default=0)
 
     meta = {"collection": "zil_pow_works"}
+
+    def __str__(self):
+        return f"[PowWork: {self.header}, {self.finished}, {self.expire_time}]"
 
     @classmethod
     def new_work(cls, header: str, seed: str, boundary: str,
@@ -85,6 +89,17 @@ class PowWork(ModelMixin, mg.Document):
         self.reload()
         return self
 
+    def save_result(self, nonce: str, mix_digest: str, miner_wallet: str, worker_name: str):
+        pow_result = PowResult(header=self.header, seed=self.seed,
+                               boundary=self.boundary, pub_key=self.pub_key,
+                               mix_digest=mix_digest, nonce=nonce, verified=False,
+                               miner_wallet=miner_wallet, worker_name=worker_name)
+        if pow_result.save():
+            res = self.update(set__finished=True, set__miner_wallet=miner_wallet)
+            if res:
+                return pow_result
+        return None
+
 
 class PowResult(ModelMixin, mg.Document):
     meta = {"collection": "zil_pow_results"}
@@ -103,3 +118,6 @@ class PowResult(ModelMixin, mg.Document):
     verified = mg.BooleanField(default=False)
     miner_wallet = mg.StringField(max_length=128)
     worker_name = mg.StringField(max_length=64, default="")
+
+    def __str__(self):
+        return f"[PowResult: {self.header}]"

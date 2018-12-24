@@ -18,7 +18,8 @@ import logging
 from typing import List, Tuple
 from jsonrpcserver import method
 
-from zilpool.database import pow
+from zilpool.common import utils
+from zilpool.database import pow, miner
 from zilpool.pyzil import ethash
 from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
 from zilpool.pyzil.crypto import hex_str_to_int as h2i
@@ -38,6 +39,7 @@ def init_apis(config):
 
         if work.increase_dispatched():
             return work.header, work.seed, work.boundary
+        logging.warning(f"increase_dispatched failed, {work}")
         return no_work
 
     @method
@@ -50,24 +52,46 @@ def init_apis(config):
                 len(mix_digest) == 66 and
                 len(worker_name) < 64)
 
-        nonce_int, mix_digest_bytes, boundary_bytes = h2i(nonce), h2b(mix_digest), h2b(boundary)
-        miner_wallet_bytes = h2b(miner_wallet)
+        # 1. validate user input parameters
+        worker_name = worker_name.strip()
+        assert utils.is_valid_str(worker_name)
         worker_name = worker_name if len(worker_name) > 0 else "default_worker"
 
+        nonce_int, mix_digest_bytes, boundary_bytes = h2i(nonce), h2b(mix_digest), h2b(boundary)
+        miner_wallet_bytes = h2b(miner_wallet)
+
+        # 2. get or create miner/worker
+        _miner = miner.Miner.get_or_create(miner_wallet, worker_name)
+        _worker = miner.Worker.get_or_create(miner_wallet, worker_name)
+        if not _miner or not _worker:
+            logging.warning("miner/worker not found, {worker_name}@{miner_wallet}")
+            return False
+        _worker.update_stat(inc_submitted=1)
+
+        # 3. check work existing
         work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary)
         if not work:
+            logging.warning(f"work notfound/finished/expired, {header} {boundary}")
+            _worker.update_stat(inc_failed=1)
             return False
 
-        # verify result
+        # 4. verify result
         seed, header = h2b(work.seed), h2b(work.header)
 
         block_num = ethash.seed_to_block_num(seed)
         if not ethash.verify_pow_work(block_num, header, mix_digest_bytes, nonce_int, boundary_bytes):
-            logging.warning(f"wrong result from {miner_wallet}")
+            logging.warning(f"wrong result from miner {miner_wallet}-{worker_name}, {work}")
+            _worker.update_stat(inc_failed=1)
             return False
 
-        # todo: save to database
+        # 5. save to database
+        if not work.save_result(nonce, mix_digest, miner_wallet, worker_name):
+            logging.warning(f"failed to save result for miner {miner_wallet}-{worker_name}, {work}")
+            return False
 
+        _worker.update_stat(inc_finished=1)
+
+        # 6. todo: miner reward
         return True
 
     @method
