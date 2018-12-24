@@ -138,14 +138,14 @@ def build_pow_work(params=None):
         while True:
             for i in range(5):
                 difficulty = random.randrange(0, 15)
-                timeout = random.randrange(0, 300)
+                timeout = random.randrange(300, 600)
                 node = random.randrange(0, len(debug_data.nodes))
                 add_new_work(block_num, difficulty, timeout, node)
+                sec = random.randrange(0, 30)
+                print(f"sleep {sec} seconds ......")
+                time.sleep(sec)
 
             block_num += 1
-            sec = random.randrange(0, 30)
-            print(f"sleep {sec} seconds ......")
-            time.sleep(sec)
 
 
 def show_miners(params=None):

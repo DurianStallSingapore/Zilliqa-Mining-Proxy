@@ -37,7 +37,7 @@ def init_apis(config):
         if not work:
             return no_work
 
-        if work.increase_dispatched():
+        if work.increase_dispatched(inc_expire_seconds=5):
             return work.header, work.seed, work.boundary, True, 0
         logging.warning(f"increase_dispatched failed, {work}")
         return no_work
