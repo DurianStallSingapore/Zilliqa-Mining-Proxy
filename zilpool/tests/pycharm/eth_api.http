@@ -11,8 +11,8 @@ Cache-Control: no-cache
 # eth_submitWork
 # DATA, 8 Bytes - The nonce found (64 bits)
 # DATA, 32 Bytes - The header's pow-hash (256 bits)
-# DATA, 32 Bytes - The boundary condition ("target")
 # DATA, 32 Bytes - The mix digest (256 bits)
+# DATA, 32 Bytes - The boundary condition ("target")
 # DATA, 20 Bytes - The miner wallet address
 # STR, <64 Bytes - The miner worker name
 POST http://localhost:4202/api
@@ -22,10 +22,24 @@ Cache-Control: no-cache
 {"id": 1, "jsonrpc": "2.0", "method": "eth_submitWork", "params": [
 "0x495732e0ed7a801c",
 "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
-"0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 "0x2f74cdeb198af0b9abe65d22d372e22fb2d474371774a9583c1cc427a07939f5",
+"0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 "0x967e40168af66f441b73c0146e26069bfc3accc7",
 "worker1"
+]}
+
+### ethminer submit
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "eth_submitWork", "params": [
+"0x495732e0ed7a801c",
+"0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
+"0x2f74cdeb198af0b9abe65d22d372e22fb2d474371774a9583c1cc427a07939f5",
+"0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+"0x95B27EC211F86748DD985E1424B4058E94AA5814",
+"gpu_nvidia_worker1"
 ]}
 
 

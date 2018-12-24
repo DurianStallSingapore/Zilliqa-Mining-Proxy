@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import logging
+from json import dumps
+from functools import partial
 from aiohttp import web
 from jsonrpcserver import async_dispatch
 from jsonrpcserver.response import ExceptionResponse
@@ -26,6 +28,8 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 
 def create_handler(config=None):
+    compat_dumps = partial(dumps, separators=(",", ":"))
+
     async def api_handle(request: web.Request) -> web.Response:
         request = await request.text()
         response = await async_dispatch(request,
@@ -36,7 +40,9 @@ def create_handler(config=None):
         if isinstance(response, ExceptionResponse):
             logging.error("Server Error", exc_info=response.exc)
         if response.wanted:
-            return web.json_response(response.deserialized(), status=response.http_status)
+            return web.json_response(response.deserialized(),
+                                     status=response.http_status,
+                                     dumps=compat_dumps)
         else:
             return web.Response()
     return api_handle

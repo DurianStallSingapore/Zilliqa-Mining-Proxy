@@ -26,7 +26,7 @@ from zilpool.pyzil.crypto import hex_str_to_int as h2i
 
 
 def init_apis(config):
-    no_work = ("", "", "")
+    no_work = ("", "", "", False, 10)
 
     @method
     async def eth_getWork() -> [List, Tuple]:
@@ -38,18 +38,19 @@ def init_apis(config):
             return no_work
 
         if work.increase_dispatched():
-            return work.header, work.seed, work.boundary
+            return work.header, work.seed, work.boundary, True, 0
         logging.warning(f"increase_dispatched failed, {work}")
         return no_work
 
     @method
-    async def eth_submitWork(nonce: str, header: str, boundary: str,
-                             mix_digest: str, miner_wallet: str,
-                             worker_name: str) -> bool:
+    async def eth_submitWork(nonce: str, header: str, mix_digest: str,
+                             boundary: str, miner_wallet: str,
+                             worker_name: str="") -> bool:
         assert (len(nonce) == 18 and
                 len(header) == 66 and
-                len(boundary) == 66 and
                 len(mix_digest) == 66 and
+                len(boundary) == 66 and
+                len(miner_wallet) == 42 and
                 len(worker_name) < 64)
 
         # 1. validate user input parameters
