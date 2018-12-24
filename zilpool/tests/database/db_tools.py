@@ -19,6 +19,8 @@
 
 import os
 import sys
+import time
+import random
 import argparse
 
 from zilpool.common import utils
@@ -79,6 +81,40 @@ def build_debug_db(params=None):
         print(f"miner added: {m}")
 
 
+def list_works(pub_key=None):
+    if not pub_key:
+        print("list all works")
+        works = pow.PowWork.objects().all()
+    else:
+        print(f"list works from pub_key: {pub_key}")
+        works = pow.PowWork.objects(pub_key=pub_key).all()
+
+    for work in works:
+        print(f"    {work}")
+
+
+def add_new_work(block_num, difficulty, timeout, node=0):
+    print(f"Generate a work for block {block_num}, difficulty {difficulty}")
+    header = crypto.rand_hex_str_0x(64)
+    seed = crypto.bytes_to_hex_str_0x(ethash.block_num_to_seed(block_num))
+    boundary = crypto.bytes_to_hex_str_0x(ethash.difficulty_to_boundary(difficulty))
+
+    print(f"    header    : {header}")
+    print(f"    seed      : {seed}")
+    print(f"    boundary  : {boundary}")
+
+    pub_key = debug_data.nodes[node][0]
+    print(f"save work, timeout = {timeout}, pub_key = {pub_key}")
+    work = pow.PowWork.new_work(header, seed, boundary,
+                                pub_key=pub_key, signature="",
+                                timeout=timeout)
+    work = work.save()
+    if work:
+        print(f"success, {work}")
+    else:
+        print(f"failed")
+
+
 def build_pow_work(params=None):
     if not params:
         print("sub commands:")
@@ -86,49 +122,30 @@ def build_pow_work(params=None):
         print("    list [pub_key]")
         return
 
-    def add_new_work():
+    if params[0] == "new":
         print("work new [block_num] [difficulty] [timeout]")
-
         block_num = int(params[1]) if len(params) > 1 else 42
         difficulty = int(params[2]) if len(params) > 2 else 5
         timeout = int(params[3]) if len(params) > 3 else 600
 
-        print(f"Generate a work for block {block_num}, difficulty {difficulty}")
-        header = crypto.rand_hex_str_0x(64)
-        seed = crypto.bytes_to_hex_str_0x(ethash.block_num_to_seed(block_num))
-        boundary = crypto.bytes_to_hex_str_0x(ethash.difficulty_to_boundary(difficulty))
-
-        print(f"    header    : {header}")
-        print(f"    seed      : {seed}")
-        print(f"    boundary  : {boundary}")
-
-        pub_key = debug_data.nodes[0][0]
-        print(f"save work, timeout = {timeout}, pub_key = {pub_key}")
-        work = pow.PowWork.new_work(header, seed, boundary,
-                                    pub_key=pub_key, signature="",
-                                    timeout=timeout)
-        work = work.save()
-        if work:
-            print(f"success, {work}")
-        else:
-            print(f"failed")
-
-    def list_works():
-        pub_key = params[1] if len(params) > 1 else None
-        if not pub_key:
-            print("list all works")
-            works = pow.PowWork.objects().all()
-        else:
-            print(f"list works from pub_key: {pub_key}")
-            works = pow.PowWork.objects(pub_key=pub_key).all()
-
-        for work in works:
-            print(f"    {work}")
-
-    if params[0] == "new":
-        add_new_work()
+        add_new_work(block_num, difficulty, timeout)
     elif params[0] == "list":
-        list_works()
+        pub_key = params[1] if len(params) > 1 else None
+        list_works(pub_key)
+    elif params[0] == "demo":
+        print("start loop to create new work")
+        block_num = 0
+        while True:
+            for i in range(5):
+                difficulty = random.randrange(0, 15)
+                timeout = random.randrange(0, 300)
+                node = random.randrange(0, len(debug_data.nodes))
+                add_new_work(block_num, difficulty, timeout, node)
+
+            block_num += 1
+            sec = random.randrange(0, 30)
+            print(f"sleep {sec} seconds ......")
+            time.sleep(sec)
 
 
 def show_miners(params=None):
