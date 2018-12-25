@@ -119,6 +119,7 @@ def build_pow_work(params=None):
     if not params:
         print("sub commands:")
         print("    new [block_num] [difficulty] [timeout]")
+        print("    demo [block_num] [difficulty] [timeout]")
         print("    list [pub_key]")
         return
 
@@ -133,13 +134,21 @@ def build_pow_work(params=None):
         pub_key = params[1] if len(params) > 1 else None
         list_works(pub_key)
     elif params[0] == "demo":
+        print("work demo [block_num] [difficulty] [timeout]")
         print("start loop to create new work")
-        block_num = 0
+        block_num = int(params[1]) if len(params) > 1 else 0
+        difficulty = int(params[2]) if len(params) > 2 else 25
+        timeout = int(params[3]) if len(params) > 3 else 600
         while True:
             for i in range(5):
-                difficulty = random.randrange(0, 15)
-                timeout = random.randrange(300, 600)
+                difficulty = random.randrange(-5, 5) + difficulty
+                timeout = random.randrange(-60, 60) + timeout
                 node = random.randrange(0, len(debug_data.nodes))
+                if difficulty < 0:
+                    difficulty = 0
+                if timeout < 0:
+                    timeout = 0
+
                 add_new_work(block_num, difficulty, timeout, node)
                 sec = random.randrange(0, 30)
                 print(f"sleep {sec} seconds ......")
