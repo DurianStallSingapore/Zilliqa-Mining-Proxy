@@ -15,10 +15,10 @@
 # limitations under the License.
 
 import logging
-from typing import List
+from typing import List, Tuple, Optional, Union
 from collections import OrderedDict
 
-from zilpool.pyzil import crypto
+from . import crypto
 
 from pyethash import (
     EPOCH_LENGTH,
@@ -76,7 +76,8 @@ def boundary_to_difficulty(boundary: bytes) -> int:
 assert boundary_to_difficulty(difficulty_to_boundary(11)) == 11
 
 
-def is_less_or_equal(hash_1: [str, bytes], hash_2: [str, bytes]) -> bool:
+def is_less_or_equal(hash_1: Union[str, bytes],
+                     hash_2: Union[str, bytes]) -> bool:
     if isinstance(hash_1, str):
         hash_1 = crypto.hex_str_to_bytes(hash_1)
     if isinstance(hash_2, str):
@@ -90,18 +91,18 @@ def is_less_or_equal(hash_1: [str, bytes], hash_2: [str, bytes]) -> bool:
 
 # for pow verify
 def verify_pow_work(block_number: int, header: bytes, mix_digest: bytes,
-                    nonce: int, boundary: bytes):
+                    nonce: int, boundary: bytes) -> Optional[bytes]:
 
     calc_mix_digest, calc_result = pow_hash(block_number, header, nonce)
 
     if mix_digest != calc_mix_digest:
         logging.warning("mix_digest mismatch!")
-        return False
+        return None
 
     ok = is_less_or_equal(calc_result, boundary)
     if not ok:
         logging.warning("result not met the difficult")
-        return False
+        return None
     return calc_result
 
 
@@ -125,7 +126,7 @@ def get_cache(block_number: int) -> bytes:
     return c
 
 
-def pow_hash(block_number, header, nonce):
+def pow_hash(block_number, header, nonce) -> Tuple[bytes, bytes]:
     cache_bytes = get_cache(block_number)
     hash_ret = hashimoto_light(block_number, cache_bytes, header, nonce)
     return hash_ret[b"mix digest"], hash_ret[b"result"]

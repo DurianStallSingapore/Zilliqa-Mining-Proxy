@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
+from typing import Union
 from functools import partial
+from collections import namedtuple
 
+import string
 import hashlib
 import secrets
 import coincurve
@@ -26,6 +28,22 @@ TOKEN_NUM_BYTES = 32
 TOKEN_STR_LENGTH = TOKEN_NUM_BYTES * 2
 ADDRESS_NUM_BYTES = 20     # address takes the last 20 bytes from hash digest of public key
 ADDRESS_STR_LENGTH = ADDRESS_NUM_BYTES * 2
+
+
+def ensure_bytes(str_or_bytes: Union[str, bytes],
+                 encoding="utf-8", errors="strict") -> bytes:
+    if isinstance(str_or_bytes, str):
+        return str_or_bytes.encode(encoding=encoding, errors=errors)
+
+    if not isinstance(str_or_bytes, bytes):
+        raise TypeError("not bytes type")
+
+    return str_or_bytes
+
+
+def rand_string(n_str=8) -> str:
+    alphabet = string.ascii_letters + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(n_str))
 
 
 def rand_bytes(n_bytes=TOKEN_NUM_BYTES) -> bytes:
@@ -54,6 +72,8 @@ def sha256(*bytes_hex, encoding="utf-8") -> bytes:
 
 # hex string --> bytes
 def hex_str_to_bytes(str_hex: str) -> bytes:
+    if isinstance(str_hex, bytes):
+        return str_hex
     str_hex = str_hex.lower()
     if str_hex.startswith("0x"):
         str_hex = str_hex[2:]
@@ -93,10 +113,32 @@ int_to_hex_str_0x = partial(int_to_hex_str, prefix="0x")
 
 
 # hex string --> int number
-def hex_str_to_int(str_hex: str, byteorder="big"):
+def hex_str_to_int(str_hex: str, byteorder: str="big") -> int:
     return bytes_to_int(hex_str_to_bytes(str_hex), byteorder=byteorder)
 
 
+# ZilKey helper functions
+def address_from_private_key(str_private: Union[str, bytes]) -> str:
+    return ZilKey(str_private=str_private).address
+
+
+def address_from_public_key(str_public: Union[str, bytes]) -> str:
+    return ZilKey(str_public=str_public).address
+
+
+def decode_public(public: Union[str, bytes]) -> (int, int):
+    if isinstance(public, str):
+        public = hex_str_to_bytes(public)
+    key = coincurve.PublicKey(public)
+    return key.point()
+
+
+def encode_public(x: int, y: int, compressed=True) -> str:
+    key = coincurve.PublicKey.from_point(x, y)
+    return bytes_to_hex_str(key.format(compressed=compressed))
+
+
+# Zilliqa Key
 KeyPair = namedtuple("KeyPair", ["public", "private"])
 Point = namedtuple("Point", ["x", "y"])
 
@@ -104,11 +146,17 @@ Point = namedtuple("Point", ["x", "y"])
 class ZilKey:
     """ Zilliqa Keys """
 
-    def __init__(self, str_pub=None, str_private=None):
-        assert str_pub or str_private
+    def __init__(self,
+                 str_public: Union[str, bytes, None]=None,
+                 str_private: Union[str, bytes, None]=None):
+        assert str_public or str_private
+        if isinstance(str_public, str):
+            str_public = hex_str_to_bytes(str_public)
+        if isinstance(str_private, str):
+            str_private = hex_str_to_bytes(str_private)
 
-        self.str_pub = str_pub
-        self.str_private = str_private
+        self.bytes_public = str_public
+        self.bytes_private = str_private
 
         self.pub_key = None
         self.private_key = None
@@ -116,14 +164,14 @@ class ZilKey:
         self._generate_keys()
 
     def _generate_keys(self):
-        if self.str_private:
+        if self.bytes_private:
             self.private_key = coincurve.PrivateKey.from_int(
-                hex_str_to_int(self.str_private)
+                bytes_to_int(self.bytes_private)
             )
 
-        if self.str_pub:
+        if self.bytes_public:
             self.pub_key = coincurve.PublicKey(
-                hex_str_to_bytes(self.str_pub)
+                self.bytes_public
             )
 
         # check keys if set both
@@ -135,22 +183,22 @@ class ZilKey:
             self.pub_key = self.private_key.public_key
 
     @property
-    def keypair_str(self):
+    def keypair_str(self) -> KeyPair:
         return KeyPair(bytes_to_hex_str(self.pub_key.format()),
                        self.private_key and self.private_key.to_hex())
 
     @property
-    def keypair_bytes(self):
+    def keypair_bytes(self) -> KeyPair:
         return KeyPair(self.pub_key.format(),
                        self.private_key and self.private_key.secret)
 
     @property
-    def keypair_int(self):
+    def keypair_int(self) -> KeyPair:
         return KeyPair(bytes_to_int(self.pub_key.format(), "big"),
                        self.private_key and self.private_key.to_int())
 
     @property
-    def keypair_point(self):
+    def keypair_point(self) -> KeyPair:
         return KeyPair(Point(*self.pub_key.point()),
                        self.private_key and self.private_key.to_int())
 
@@ -166,11 +214,29 @@ class ZilKey:
         m.update(self.keypair_bytes.public)
         return m.hexdigest()[-ADDRESS_STR_LENGTH:]
 
+    def sign(self, message: bytes) -> str:
+        if not self.private_key:
+            raise RuntimeError("no private key")
+        message = ensure_bytes(message)
+
+        from .schnorr import sign
+        return bytes_to_hex_str(
+            sign(message, self.keypair_bytes.private)
+        )
+
+    def verify(self, signature: str, message: bytes) -> bool:
+        if isinstance(signature, str):
+            signature = hex_str_to_bytes(signature)
+        message = ensure_bytes(message)
+
+        from .schnorr import verify
+        return verify(message, signature, self.keypair_bytes.public)
+
     @classmethod
     def load_mykey_txt(cls, key_file="mykey.txt"):
         with open(key_file, "r") as f:
             str_pub, str_private = f.read().split()
-            return ZilKey(str_pub=str_pub, str_private=str_private)
+            return ZilKey(str_public=str_pub, str_private=str_private)
 
     @classmethod
     def generate_key_pair(cls):

@@ -96,11 +96,19 @@ class TestCrypto:
         private_key = "05C3CF3387F31202CD0798B7AA882327A1BD365331F90954A58C18F61BD08FFC"
         wallet_address = "95B27EC211F86748DD985E1424B4058E94AA5814"
 
-        new_key = crypto.ZilKey(str_pub=pub_key)
+        new_key = crypto.ZilKey(str_public=pub_key)
         assert new_key.address == wallet_address.lower()
 
         new_key = crypto.ZilKey(str_private=private_key)
         assert crypto.hex_str_to_int(new_key.keypair_str.public) == crypto.hex_str_to_int(pub_key)
 
         assert new_key.address == wallet_address.lower()
+
+    def test_sign_verify(self):
+        for i in range(10):
+            key = crypto.ZilKey.generate_key_pair()
+            l = 1 + i * 512
+            msg = crypto.rand_bytes(l) + crypto.rand_string(l).encode()
+            signature = key.sign(msg)
+            assert key.verify(signature, msg)
 
