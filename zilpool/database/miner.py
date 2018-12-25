@@ -100,5 +100,20 @@ class HashRate(ModelMixin, mg.Document):
     wallet_address = mg.StringField(max_length=128, required=True)
     worker_name = mg.StringField(max_length=64, default="")
 
-    hashrate = mg.FloatField(default=0.0, required=True)
+    hashrate = mg.IntField(default=0.0, required=True)
     updated_time = mg.DateTimeField(default=datetime.utcnow)
+
+    @classmethod
+    def log(cls, hashrate: int, wallet_address: str, worker_name: str):
+        if hashrate < 0:
+            return False
+        _miner = Miner.get(wallet_address=wallet_address)
+        if not _miner:
+            return False
+        _worker = Worker.get_or_create(wallet_address, worker_name)
+        if not _worker:
+            return False
+
+        hr = cls(wallet_address=wallet_address, worker_name=worker_name,
+                 hashrate=hashrate)
+        return hr.save()

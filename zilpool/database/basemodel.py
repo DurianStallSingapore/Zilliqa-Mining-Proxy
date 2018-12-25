@@ -55,6 +55,15 @@ def drop_all():
 
 class ModelMixin:
 
+    @classmethod
+    @fail_safe
+    def get(cls, first=True, **kwargs):
+        cursor = cls.objects(**kwargs)
+        if first:
+            return cursor.first()
+        else:
+            return cursor.all()
+
     @wraps(Document.save)
     @fail_safe
     def save(self, *args, **kwargs):

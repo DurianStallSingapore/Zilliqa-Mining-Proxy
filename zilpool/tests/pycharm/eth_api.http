@@ -43,15 +43,19 @@ Cache-Control: no-cache
 ]}
 
 
-###
-
+########################################
+# eth_submitHashrate
+# Hashrate, a hexadecimal string representation (32 bytes) of the hash rate
+# DATA, 20 Bytes - The miner wallet address
+# STR, <64 Bytes - The miner worker name
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "eth_submitHashrate", "params": [
- "0x5EED00000000000000000000000000005EED0000000000000000000000000000",
- "0xd1ff1c01710000000000000000000000d1ff1c01710000000000000000000000"
+ "0x000000000000000000000000000000000000000000000000000000000000beef",
+ "0x967e40168af66f441b73c0146e26069bfc3accc7",
+ "worker1"
 ]}
 
 ###

@@ -55,12 +55,10 @@ def init_apis(config):
                 len(worker_name) < 64)
 
         # 1. validate user input parameters
-        worker_name = worker_name.strip()
-        assert utils.is_valid_str(worker_name)
-        worker_name = worker_name if len(worker_name) > 0 else "default_worker"
-
-        nonce_int, mix_digest_bytes, boundary_bytes = h2i(nonce), h2b(mix_digest), h2b(boundary)
+        nonce_int = h2i(nonce)
+        worker_name = valid_worker_name(worker_name)
         miner_wallet_bytes = h2b(miner_wallet)
+        mix_digest_bytes, boundary_bytes = h2b(mix_digest), h2b(boundary)
 
         # 2. get or create miner/worker
         _miner = miner.Miner.get_or_create(miner_wallet, worker_name)
@@ -80,7 +78,6 @@ def init_apis(config):
 
         # 4. verify result
         seed, header = h2b(work.seed), h2b(work.header)
-
         block_num = ethash.seed_to_block_num(seed)
         hash_result = ethash.verify_pow_work(block_num, header, mix_digest_bytes,
                                              nonce_int, boundary_bytes)
@@ -93,14 +90,17 @@ def init_apis(config):
         if work.finished:
             prev_result = pow.PowResult.get_by_header_boundary(work.header, boundary)
             if prev_result and ethash.is_less_or_equal(prev_result.hash_result, hash_result):
-                logging.warning(f"submitted result > old result, ignored")
+                logging.warning(f"submitted result > old result, ignored. "
+                                f"{header} {boundary}: "
+                                f"{b2h(hash_result, prefix='0x')} > {prev_result.hash_result}")
                 _worker.update_stat(inc_failed=1)
                 return False
 
         # 6. save to database
         hash_result_str = b2h(hash_result, prefix="0x")
         if not work.save_result(nonce, mix_digest, hash_result_str, miner_wallet, worker_name):
-            logging.warning(f"failed to save result for miner {miner_wallet}-{worker_name}, {work}")
+            logging.warning(f"failed to save result for miner "
+                            f"{miner_wallet}-{worker_name}, {work}")
             return False
 
         _worker.update_stat(inc_finished=1)
@@ -112,10 +112,19 @@ def init_apis(config):
     async def eth_submitHashrate(hashrate: str, miner_wallet: str,
                                  worker_name: str="") -> bool:
         assert (len(hashrate) == 66 and
-                len(miner_wallet) == 66 and
+                len(miner_wallet) == 42 and
                 len(worker_name) < 64)
         hashrate_int, miner_wallet_bytes = h2i(hashrate), h2b(miner_wallet)
+        worker_name = valid_worker_name(worker_name)
+
+        hr_record = miner.HashRate.log(hashrate_int, miner_wallet, worker_name)
+        if not hr_record:
+            return False
+
+        return True
+
+    def valid_worker_name(worker_name: str) -> str:
         worker_name = worker_name.strip()
         assert utils.is_valid_str(worker_name)
         worker_name = worker_name if len(worker_name) > 0 else "default_worker"
-        return True
+        return worker_name
