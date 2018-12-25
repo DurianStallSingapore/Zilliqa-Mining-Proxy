@@ -27,7 +27,7 @@ FORMAT = "[%(asctime)s %(levelname)-6s %(filename)s:%(lineno)s] %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 
 
-def create_handler(config=None):
+def create_api_handler(config=None):
     compat_dumps = partial(dumps, separators=(",", ":"))
 
     async def api_handle(request: web.Request) -> web.Response:
@@ -48,7 +48,7 @@ def create_handler(config=None):
     return api_handle
 
 
-def start(conf_file=None):
+def start_api_server(conf_file=None, port=None):
     from .common import utils
     from .apis import load_apis
     from .database import init_db
@@ -64,9 +64,13 @@ def start(conf_file=None):
     load_apis(config)
 
     # init app
+    if port is None:
+        port = config.api_server.get("port", "4202")
+    api_path = config.api_server.get("path", "/api")
+
     app = web.Application(debug=config.debug)
-    app.router.add_post(config.api_server.get("path", "/api"),
-                        create_handler(config))
+    app.router.add_post(api_path, create_api_handler(config))
 
     # start ioloop
-    web.run_app(app, port=config.api_server.get("port", "4202"))
+    print(f"API endpoint: http://0.0.0.0:{port}{api_path}")
+    web.run_app(app, port=port)
