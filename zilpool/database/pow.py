@@ -21,7 +21,6 @@ import mongoengine as mg
 from mongoengine import Q
 
 from .basemodel import ModelMixin
-from .miner import Miner
 
 
 class PowWork(ModelMixin, mg.Document):
@@ -68,10 +67,12 @@ class PowWork(ModelMixin, mg.Document):
         return works
 
     @classmethod
-    def find_work_by_header_boundary(cls, header: str, boundary: str):
-        query = Q(finished=False) & Q(header=header) & Q(boundary=boundary) & \
-                Q(expire_time__gte=datetime.utcnow())
-        cursor = cls.objects(query).order_by("expire_time")
+    def find_work_by_header_boundary(cls, header: str, boundary: str,
+                                     check_expired=True, order="expire_time"):
+        query = Q(header=header) & Q(boundary=boundary)
+        if check_expired:
+            query = query & Q(expire_time__gte=datetime.utcnow())
+        cursor = cls.objects(query).order_by(order)    # default to get the oldest one
         return cursor.first()
 
     def verify_signature(self)->bool:
@@ -89,8 +90,9 @@ class PowWork(ModelMixin, mg.Document):
         self.reload()
         return self
 
-    def save_result(self, nonce: str, mix_digest: str, miner_wallet: str, worker_name: str):
-        pow_result = PowResult(header=self.header, seed=self.seed,
+    def save_result(self, nonce: str, mix_digest: str, hash_result: str,
+                    miner_wallet: str, worker_name: str):
+        pow_result = PowResult(header=self.header, seed=self.seed, hash_result=hash_result,
                                boundary=self.boundary, pub_key=self.pub_key,
                                mix_digest=mix_digest, nonce=nonce, verified=False,
                                miner_wallet=miner_wallet, worker_name=worker_name)
@@ -111,6 +113,7 @@ class PowResult(ModelMixin, mg.Document):
 
     mix_digest = mg.StringField(max_length=128, required=True)
     nonce = mg.StringField(max_length=128, required=True)
+    hash_result = mg.StringField(max_length=128, required=True)
 
     finished_time = mg.DateTimeField(default=datetime.utcnow)
     verified_time = mg.DateTimeField()
@@ -121,3 +124,9 @@ class PowResult(ModelMixin, mg.Document):
 
     def __str__(self):
         return f"[PowResult: {self.header}]"
+
+    @classmethod
+    def get_by_header_boundary(cls, header, boundary, order="-finished_time"):
+        query = Q(header=header) & Q(boundary=boundary)
+        cursor = cls.objects(query).order_by(order)    # default to get latest one
+        return cursor.first()

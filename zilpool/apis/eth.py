@@ -23,6 +23,7 @@ from zilpool.database import pow, miner
 from zilpool.pyzil import ethash
 from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
 from zilpool.pyzil.crypto import hex_str_to_int as h2i
+from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
 
 
 def init_apis(config):
@@ -70,9 +71,10 @@ def init_apis(config):
         _worker.update_stat(inc_submitted=1)
 
         # 3. check work existing
-        work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary)
+        work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary,
+                                                        check_expired=True)
         if not work:
-            logging.warning(f"work notfound/finished/expired, {header} {boundary}")
+            logging.warning(f"work not found or expired, {header} {boundary}")
             _worker.update_stat(inc_failed=1)
             return False
 
@@ -80,13 +82,24 @@ def init_apis(config):
         seed, header = h2b(work.seed), h2b(work.header)
 
         block_num = ethash.seed_to_block_num(seed)
-        if not ethash.verify_pow_work(block_num, header, mix_digest_bytes, nonce_int, boundary_bytes):
+        hash_result = ethash.verify_pow_work(block_num, header, mix_digest_bytes,
+                                             nonce_int, boundary_bytes)
+        if not hash_result:
             logging.warning(f"wrong result from miner {miner_wallet}-{worker_name}, {work}")
             _worker.update_stat(inc_failed=1)
             return False
 
-        # 5. save to database
-        if not work.save_result(nonce, mix_digest, miner_wallet, worker_name):
+        # 5. check the result if lesser than old one
+        if work.finished:
+            prev_result = pow.PowResult.get_by_header_boundary(work.header, boundary)
+            if prev_result and ethash.is_less_or_equal(prev_result.hash_result, hash_result):
+                logging.warning(f"submitted result > old result, ignored")
+                _worker.update_stat(inc_failed=1)
+                return False
+
+        # 6. save to database
+        hash_result_str = b2h(hash_result, prefix="0x")
+        if not work.save_result(nonce, mix_digest, hash_result_str, miner_wallet, worker_name):
             logging.warning(f"failed to save result for miner {miner_wallet}-{worker_name}, {work}")
             return False
 

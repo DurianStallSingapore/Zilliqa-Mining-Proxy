@@ -102,7 +102,7 @@ def verify_pow_work(block_number: int, header: bytes, mix_digest: bytes,
     if not ok:
         logging.warning("result not met the difficult")
         return False
-    return True
+    return calc_result
 
 
 CACHE_MAX_ITEMS = 10
