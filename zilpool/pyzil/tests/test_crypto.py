@@ -112,3 +112,10 @@ class TestCrypto:
             signature = key.sign(msg)
             assert key.verify(signature, msg)
 
+    def test_load_mykey(self):
+        key = crypto.ZilKey.load_mykey_txt(path_join("mykey.txt"))
+        assert key.address == "967e40168af66f441b73c0146e26069bfc3accc7"
+
+        key2 = crypto.ZilKey.load_mykey_txt(path_join("mykey2.txt"))
+        assert key2.address == "e2406d084955e2d2ba8e8eaf7fe1c6a3e9ab3ea9"
+
