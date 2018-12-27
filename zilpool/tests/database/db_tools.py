@@ -70,6 +70,8 @@ def build_debug_db(params=None):
     print("add nodes")
     for node_data in debug_data.nodes:
         pub_key, pow_fee, authorized = node_data
+        if not pub_key.startswith("0x"):
+            pub_key = "0x" + pub_key
         node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
         res = node.save()
         print(f"create pub_key: {pub_key}")
@@ -185,6 +187,57 @@ def show_miners(params=None):
         list_miners()
 
 
+def keypairs(params=None):
+    if not params:
+        print("sub commands:")
+        print("    load [file_path]              # batch load node keys to database")
+        print("    gen  [file_path] [num_nodes]  # batch generate node keys to file")
+        return
+
+    def load_keys(file_path):
+        keys = []
+
+        if not os.path.isfile(file_path):
+            print(f"keys file not found, pls run 'keys gen' first")
+            exit(1)
+
+        with open(file_path, "r") as f:
+            for line in f.readlines():
+                public, private = line.strip().split(",")
+                key = crypto.ZilKey(str_public=public, str_private=private)
+                keys.append(key)
+
+        print("add nodes")
+        for key in keys:
+            pub_key, pow_fee, authorized = key.keypair_str.public, 0.0, True
+            if not pub_key.startswith("0x"):
+                pub_key = "0x" + pub_key
+            node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
+            node = node.save()
+            print(f"create node: {node}")
+
+    def gen_keys(file_path, num_nodes=10):
+        print(f"Starting to generate keypairs for ZIL nodes")
+        keys = []
+        for i in range(num_nodes):
+            key = crypto.ZilKey.generate_key_pair()
+            keys.append(",".join(key.keypair_str))
+
+        with open(file_path, "w") as f:
+            f.write("\n".join(keys))
+
+        print(f"{len(keys)} keypairs generated into > {file_path}")
+
+    if params[0] == "load":
+        keys_file = params[1] if len(params) > 1 else "keys.txt"
+        load_keys(keys_file)
+
+    elif params[0] == "gen":
+        _file = params[1] if len(params) > 1 else "keys.txt"
+        _nodes = int(params[2]) if len(params) > 2 else 10
+        gen_keys(_file, _nodes)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("command", help="sub command: drop, build, work, miner")
@@ -207,6 +260,8 @@ def main():
         build_pow_work(args.params)
     elif args.command == "miner":
         show_miners(args.params)
+    elif args.command == "keys":
+        keypairs(args.params)
     else:
         parser.print_help()
 

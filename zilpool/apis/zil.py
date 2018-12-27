@@ -62,7 +62,7 @@ def init_apis(config):
         pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
 
         if not pow_result:
-            logging.warning(f"work not found for pub_key: {pub_key}, "
+            logging.warning(f"result not found for pub_key: {pub_key}, "
                             f"header: {header}, boundary: {boundary}")
             return work_not_done
 
@@ -82,7 +82,7 @@ def init_apis(config):
         pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
 
         if not pow_result:
-            logging.warning(f"work not found for pub_key: {pub_key}, "
+            logging.warning(f"result not found for pub_key: {pub_key}, "
                             f"header: {header}, boundary: {boundary}")
             return False
 
