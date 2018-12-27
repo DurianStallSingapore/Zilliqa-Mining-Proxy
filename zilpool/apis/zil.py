@@ -21,7 +21,6 @@ from ..database import pow, zilnode
 
 
 def init_apis(config):
-    work_not_done = (False, "", "", "")
 
     @method
     async def zil_requestWork(pub_key: str, header: str,
@@ -34,6 +33,8 @@ def init_apis(config):
                 timeout > 0 and
                 len(signature) == 66)
 
+        # todo: verify signature
+
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
         if not (node and node.authorized):
             logging.warning(f"unauthorized public key: {pub_key}")
@@ -42,12 +43,11 @@ def init_apis(config):
         work = pow.PowWork.new_work(header, seed, boundary,
                                     pub_key=pub_key, signature=signature,
                                     timeout=timeout)
-        if not work.verify_signature():
-            logging.warning(f"wrong signature: {work}")
-            return False
 
         work = work.save()
         return work is not None
+
+    work_not_done = (False, "", "", "")
 
     @method
     async def zil_checkWorkStatus(pub_key: str, header: str,
@@ -56,7 +56,17 @@ def init_apis(config):
                 len(header) == 66 and
                 len(boundary) == 66 and
                 len(signature) == 66)
-        return True, "nonce", "header", "mix digest"
+
+        # todo: verify signature
+
+        pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
+
+        if not pow_result:
+            logging.warning(f"work not found for pub_key: {pub_key}, "
+                            f"header: {header}, boundary: {boundary}")
+            return work_not_done
+
+        return True, pow_result.nonce, pow_result.header, pow_result.mix_digest
 
     @method
     async def zil_verifyResult(pub_key: str, verified: bool,
@@ -66,4 +76,18 @@ def init_apis(config):
                 len(header) == 66 and
                 len(boundary) == 66 and
                 len(signature) == 66)
-        return True
+
+        # todo: verify signature
+
+        pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
+
+        if not pow_result:
+            logging.warning(f"work not found for pub_key: {pub_key}, "
+                            f"header: {header}, boundary: {boundary}")
+            return False
+
+        if pow_result.update(verified=True):
+            return True
+
+        logging.warning(f"Failed update pow result {pow_result}")
+        return False

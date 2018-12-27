@@ -75,9 +75,6 @@ class PowWork(ModelMixin, mg.Document):
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one
         return cursor.first()
 
-    def verify_signature(self)->bool:
-        return True
-
     def increase_dispatched(self, count=1, inc_expire_seconds=1):
         if inc_expire_seconds > 0:
             new_expire_time = self.expire_time + timedelta(seconds=inc_expire_seconds)
@@ -123,10 +120,12 @@ class PowResult(ModelMixin, mg.Document):
     worker_name = mg.StringField(max_length=64, default="")
 
     def __str__(self):
-        return f"[PowResult: {self.header}]"
+        return f"[PowResult: {self.pub_key}, {self.header}]"
 
     @classmethod
-    def get_by_header_boundary(cls, header, boundary, order="-finished_time"):
+    def get_pow_result(cls, header, boundary, pub_key=None, order="-finished_time"):
         query = Q(header=header) & Q(boundary=boundary)
+        if pub_key is not None:
+            query = query & Q(pub_key=pub_key)
         cursor = cls.objects(query).order_by(order)    # default to get latest one
         return cursor.first()

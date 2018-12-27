@@ -88,7 +88,7 @@ def init_apis(config):
 
         # 5. check the result if lesser than old one
         if work.finished:
-            prev_result = pow.PowResult.get_by_header_boundary(work.header, boundary)
+            prev_result = pow.PowResult.get_pow_result(work.header, boundary)
             if prev_result and ethash.is_less_or_equal(prev_result.hash_result, hash_result):
                 logging.warning(f"submitted result > old result, ignored. "
                                 f"{header} {boundary}: "
