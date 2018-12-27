@@ -121,9 +121,10 @@ class ECSchnorr:
       hasher (hashlib): callable constructor returning an object with update(), digest() interface. Example: hashlib.sha256,  hashlib.sha512...
       option (str) : one of "BSI","ISO","ISOx","LIBSECP"
       fmt (str) : in/out signature format. See :mod:`ecpy.formatters`
+      size (int) : number of bytes for encode_sig. See :mod:`ecpy.formatters`
     """
     
-    def __init__(self, hasher, option="ISO", fmt="DER"):
+    def __init__(self, hasher, option="ISO", fmt="DER", size=0):
         if not option in ("ISO","ISOx","BSI","LIBSECP","Z"):
             raise ECPyException('ECSchnorr option not supported: %s'%option)
         if not fmt in list_formats():
@@ -131,6 +132,7 @@ class ECSchnorr:
 
         self._hasher = hasher
         self.fmt = fmt
+        self.size = size
         self.maxtries=10
         self.option = option
         
@@ -225,7 +227,7 @@ class ECSchnorr:
             if r==0 or s==0:
                 return None
 
-        return encode_sig(r, s, self.fmt)
+        return encode_sig(r, s, self.fmt, self.size)
             
     def verify(self,msg,sig,pu_key):
         """ Verifies a message signature.                

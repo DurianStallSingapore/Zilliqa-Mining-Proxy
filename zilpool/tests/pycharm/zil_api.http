@@ -5,7 +5,7 @@
 # DATA, 32 Bytes - the seed hash used for the DAG.
 # DATA, 32 Bytes - the boundary condition ("target"), 2^256 / difficulty.
 # Mining Time - Integer - the mining time in seconds.
-# DATA, 32 Bytes - the signature of the message
+# DATA, 64 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
@@ -16,7 +16,7 @@ Cache-Control: no-cache
  "0x0000000000000000000000000000000000000000000000000000000000000000",
  "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
  120,
- "0x0000000000000000000000000000000000000000000000000000000000000000"
+ "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
 ########################################
@@ -24,7 +24,7 @@ Cache-Control: no-cache
 # DATA, 33 Bytes - the Zilliqa node PubKey
 # DATA, 32 Bytes - current block header pow-hash
 # DATA, 32 Bytes - the boundary condition ("target")
-# DATA, 32 Bytes - the signature of the message
+# DATA, 64 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
@@ -33,7 +33,7 @@ Cache-Control: no-cache
  "0x02A349FA10F0E6A614A38D6033588A422357F2C60AF2EEBAE15D06498DF8AF0B05",
  "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
  "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
- "0x0000000000000000000000000000000000000000000000000000000000000000"
+ "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
 
@@ -43,7 +43,7 @@ Cache-Control: no-cache
 # Boolean, 1 Bytes - the PoW verify pass or fail
 # DATA, 32 Bytes - The header's pow-hash (256 bits)
 # DATA, 32 Bytes - the boundary condition ("target")
-# DATA, 32 Bytes - the signature of the message
+# DATA, 64 Bytes - the signature of the message
 POST http://localhost:4202/api
 Accept: application/json
 Cache-Control: no-cache
@@ -53,7 +53,7 @@ Cache-Control: no-cache
  true,
  "0x372eca2454ead349c3df0ab5d00b0b706b23e49d469387db91811cee0358fc6d",
  "0x0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
- "0x0000000000000000000000000000000000000000000000000000000000000000"
+ "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 ]}
 
 ########################################

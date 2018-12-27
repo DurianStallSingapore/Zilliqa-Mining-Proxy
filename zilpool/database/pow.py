@@ -28,7 +28,7 @@ class PowWork(ModelMixin, mg.Document):
     seed = mg.StringField(max_length=128, required=True)
     boundary = mg.StringField(max_length=128, required=True)
     pub_key = mg.StringField(max_length=128)
-    signature = mg.StringField(max_length=128)
+    signature = mg.StringField(max_length=256)
 
     start_time = mg.DateTimeField(default=datetime.utcnow)
     expire_time = mg.DateTimeField()

@@ -31,12 +31,12 @@ from ecpy.ecschnorr import ECSchnorr
 from ecpy.keys import ECPublicKey, ECPrivateKey
 
 
-encode_signature = partial(formatters.encode_sig, fmt="DER", size=0)
-decode_signature = partial(formatters.decode_sig, fmt="DER")
+encode_signature = partial(formatters.encode_sig, fmt="RAW", size=32)
+decode_signature = partial(formatters.decode_sig, fmt="RAW")
 
 
 curve = ECCurve.get_curve("secp256k1")
-zil_signer = ECSchnorr(hashlib.sha256, option="Z", fmt="DER")
+zil_signer = ECSchnorr(hashlib.sha256, option="Z", fmt="RAW", size=32)
 
 
 __all__ = [

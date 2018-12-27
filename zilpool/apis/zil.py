@@ -31,7 +31,7 @@ def init_apis(config):
                 len(seed) == 66 and
                 len(boundary) == 66 and
                 timeout > 0 and
-                len(signature) == 66)
+                len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
 
         # todo: verify signature
 
@@ -55,7 +55,7 @@ def init_apis(config):
         assert (len(pub_key) == 68 and
                 len(header) == 66 and
                 len(boundary) == 66 and
-                len(signature) == 66)
+                len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
 
         # todo: verify signature
 
@@ -75,7 +75,7 @@ def init_apis(config):
                 isinstance(verified, bool) and
                 len(header) == 66 and
                 len(boundary) == 66 and
-                len(signature) == 66)
+                len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
 
         # todo: verify signature
 
