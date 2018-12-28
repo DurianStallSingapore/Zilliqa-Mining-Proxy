@@ -111,9 +111,6 @@ def init_apis(config):
     @method
     async def eth_submitHashrate(hashrate: str, miner_wallet: str,
                                  worker_name: str="") -> bool:
-        assert (len(hashrate) == 66 and
-                len(miner_wallet) == 42 and
-                len(worker_name) < 64)
         hashrate_int, miner_wallet_bytes = h2i(hashrate), h2b(miner_wallet)
         worker_name = valid_worker_name(worker_name)
 

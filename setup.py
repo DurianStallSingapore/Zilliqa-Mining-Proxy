@@ -14,7 +14,7 @@ package_data = {"zilpool": ["*.conf", "tests/*"]}
 
 tests_require = ["pytest"]
 install_requires = [
-    "pyyaml", "jsonrpcserver", "aiohttp",
+    "pyyaml", "jsonrpcserver", "aiohttp", "jsonrpcclient[aiohttp]",
     "mongoengine", "pymongo",
     "coincurve", "pyethash", "eth-hash[pycryptodome]",
 ]
