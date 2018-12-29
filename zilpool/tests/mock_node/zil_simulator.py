@@ -34,11 +34,6 @@ config_file = os.path.join(cur_dir, "nodes.conf")
 default_config = load_config(config_file)
 
 
-# set up global aio client session
-loop = asyncio.get_event_loop()
-session = ClientSession(loop=loop)
-
-
 class Node:
     def __init__(self, node_id, key, args):
         self.key = key
@@ -215,7 +210,7 @@ class Node:
             retry=retry, sleep=2
         )
 
-    async def run(self):
+    async def run(self, session):
         waiting = random.randrange(1, 10)
         self.log(f"starting in {waiting} seconds ......")
         await asyncio.sleep(waiting)
@@ -269,9 +264,14 @@ def run(args):
     nodes = [Node(i, keys[i], args) for i in range(args.nodes)]
     print(f"{len(nodes)} nodes created, starting to run ...")
 
-    tasks = [node.run() for node in nodes]
-
-    loop.run_until_complete(asyncio.wait(tasks))
+    # set up aio client session and run
+    loop = asyncio.get_event_loop()
+    session = ClientSession(loop=loop)
+    try:
+        tasks = [node.run(session) for node in nodes]
+        loop.run_until_complete(asyncio.wait(tasks))
+    finally:
+        session.close()
 
 
 def keygen(args):
