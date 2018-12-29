@@ -203,7 +203,15 @@ def keypairs(params=None):
 
         with open(file_path, "r") as f:
             for line in f.readlines():
-                public, private = line.strip().split(",")
+                parts = line.strip().split(",")
+                if len(parts) < 1:
+                    print(f"Invalid Key in {line}")
+                    continue
+                public = parts[0]
+                private = None
+                if len(parts) > 1:
+                    private = parts[1]
+
                 key = crypto.ZilKey(str_public=public, str_private=private)
                 keys.append(key)
 
