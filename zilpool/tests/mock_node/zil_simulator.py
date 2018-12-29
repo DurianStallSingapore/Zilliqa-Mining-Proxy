@@ -318,17 +318,17 @@ zil_simulator <command> [<args>]
 
     parser.add_argument("-p", "--proxy", default=default_config["proxy_server"],
                         help=f"host of proxy server, default {default_config['proxy_server']}")
-    parser.add_argument("-n", "--nodes", default=default_config["nodes"],
+    parser.add_argument("-n", "--nodes", default=default_config["nodes"], type=int,
                         help=f"# of nodes to run, default {default_config['nodes']}")
-    parser.add_argument("-pow", "--pow", default=default_config["pow_window"],
+    parser.add_argument("-pow", "--pow", default=default_config["pow_window"], type=int,
                         help=f"seconds of PoW window, default {default_config['pow_window']}")
-    parser.add_argument("-e", "--epoch", default=default_config["epoch_time"],
+    parser.add_argument("-e", "--epoch", default=default_config["epoch_time"], type=int,
                         help=f"seconds of a DS epoch, default {default_config['epoch_time']}")
-    parser.add_argument("-b", "--block", default=default_config["start_block"],
+    parser.add_argument("-b", "--block", default=default_config["start_block"], type=int,
                         help=f"block num to start, default {default_config['start_block']}")
-    parser.add_argument("-d", "--diff", default=default_config["difficulty"],
+    parser.add_argument("-d", "--diff", default=default_config["difficulty"], type=int,
                         help=f"shards difficulty, default {default_config['difficulty']}")
-    parser.add_argument("-ds", "--ds_diff", default=default_config["ds_difficulty"],
+    parser.add_argument("-ds", "--ds_diff", default=default_config["ds_difficulty"], type=int,
                         help=f"DS difficulty, default {default_config['ds_difficulty']}")
     parser.add_argument("-k", "--keys", default=default_config["keys_file"],
                         help=f"file of keys, default {default_config['keys_file']}")
