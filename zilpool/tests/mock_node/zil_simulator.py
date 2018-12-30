@@ -57,29 +57,29 @@ class Node:
 
     def create_work(self):
         header = crypto.rand_bytes(32)
-        seed = ethash.block_num_to_seed(self.block)
+        block_num = crypto.int_to_bytes(self.block, n_bytes=8)
 
         return {
-            "header": header,    # 32 bytes
-            "seed": seed,        # 32 bytes
+            "header": header,              # 32 bytes
+            "block_num": block_num,        # 8 bytes
         }
 
     def make_work_request(self, work, diff):
-        timeout = self.args.pow
+        timeout = crypto.int_to_bytes(self.args.pow, n_bytes=4)
         boundary = ethash.difficulty_to_boundary(diff)
 
         # requests are bytes
         bytes_reqs = [
             self.key.keypair_bytes.public,    # 33 bytes
             work["header"],                   # 32 bytes
-            work["seed"],                     # 32 bytes
+            work["block_num"],                # 8 bytes
             boundary,                         # 32 bytes
-            crypto.int_to_bytes(timeout, n_bytes=8)  # 8 bytes
+            timeout,                          # 4 bytes
         ]
 
         # convert to bytes to sign
         bytes_to_sign = b"".join(bytes_reqs)
-        assert len(bytes_to_sign) == 33 + 32 * 3 + 8
+        assert len(bytes_to_sign) == 33 + 32 * 2 + 8 + 4
 
         signature = self.key.sign(bytes_to_sign)    # signature is hex string, len 128
         assert len(signature) == 128
@@ -87,8 +87,6 @@ class Node:
 
         # convert to hex string starts with "0x"
         req = [crypto.bytes_to_hex_str_0x(b) for b in bytes_reqs]
-        # change timeout to int
-        req[4] = timeout
         # append signature
         req.append(signature)
         return req
@@ -140,8 +138,6 @@ class Node:
 
         # convert to hex string starts with "0x"
         req = [crypto.bytes_to_hex_str_0x(b) for b in bytes_reqs]
-        # change verify to bool
-        req[1] = verify
         # append signature
         req.append(signature)
         return req

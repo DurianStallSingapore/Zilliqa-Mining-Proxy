@@ -31,7 +31,7 @@ from eth_hash.auto import keccak
 MAX_EPOCH = 2048
 
 
-def block_num_to_seed(block_number) -> bytes:
+def block_num_to_seed(block_number: int) -> bytes:
     return get_seedhash(block_number)
 
 

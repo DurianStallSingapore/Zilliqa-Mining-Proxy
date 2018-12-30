@@ -18,29 +18,38 @@ import logging
 from jsonrpcserver import method
 
 from ..database import pow, zilnode
+from ..pyzil import crypto
 
 
 def init_apis(config):
+    zil_config = config["api_server"]["zil"]
 
     @method
     async def zil_requestWork(pub_key: str, header: str,
-                              seed: str, boundary: str,
-                              timeout: int, signature: str) -> bool:
-        assert (len(pub_key) == 68 and
-                len(header) == 66 and
-                len(seed) == 66 and
-                len(boundary) == 66 and
-                timeout > 0 and
-                len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
+                              block_num: str, boundary: str,
+                              timeout: str, signature: str) -> bool:
+        assert (len(pub_key) == 68 and      # 33 bytes -> "0x" + 66 chars
+                len(header) == 66 and       # 32 bytes -> "0x" + 64 chars
+                len(block_num) == 18 and    # 8 bytes  -> "0x" + 16 chars
+                len(boundary) == 66 and     # 32 bytes -> "0x" + 64 chars
+                len(timeout) == 10 and      # 4 bytes  -> "0x" + 8 chars
+                len(signature) == 130)      # 64 bytes -> "0x" + 128 chars
 
-        # todo: verify signature
+        # verify signature
+        if not verify_signature(pub_key, signature,
+                                pub_key, header, block_num, boundary, timeout):
+            logging.warning(f"failed verify signature")
+            return False
+
+        block_num = crypto.hex_str_to_int(block_num)
+        timeout = crypto.hex_str_to_int(timeout)
 
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
         if not (node and node.authorized):
             logging.warning(f"unauthorized public key: {pub_key}")
             return False
 
-        work = pow.PowWork.new_work(header, seed, boundary,
+        work = pow.PowWork.new_work(header, block_num, boundary,
                                     pub_key=pub_key, signature=signature,
                                     timeout=timeout)
 
@@ -57,7 +66,11 @@ def init_apis(config):
                 len(boundary) == 66 and
                 len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
 
-        # todo: verify signature
+        # verify signature
+        if not verify_signature(pub_key, signature,
+                                pub_key, header, boundary):
+            logging.warning(f"failed verify signature")
+            return False
 
         pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
 
@@ -69,15 +82,19 @@ def init_apis(config):
         return True, pow_result.nonce, pow_result.header, pow_result.mix_digest
 
     @method
-    async def zil_verifyResult(pub_key: str, verified: bool,
+    async def zil_verifyResult(pub_key: str, verified: str,
                                header: str, boundary: str, signature: str) -> bool:
         assert (len(pub_key) == 68 and
-                isinstance(verified, bool) and
+                len(verified) == 4 and
                 len(header) == 66 and
                 len(boundary) == 66 and
-                len(signature) == 130)    # 64 bytes -> 128 chars + "0x"
+                len(signature) == 130)    # 64 bytes -> "0x" + 128 chars
 
-        # todo: verify signature
+        # verify signature
+        if not verify_signature(pub_key, signature,
+                                pub_key, verified, header, boundary):
+            logging.warning(f"failed verify signature")
+            return False
 
         pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
 
@@ -86,8 +103,33 @@ def init_apis(config):
                             f"header: {header}, boundary: {boundary}")
             return False
 
-        if pow_result.update(verified=True):
+        verified = verified == "0x01"
+        if pow_result.update(verified=verified):
             return True
 
         logging.warning(f"Failed update pow result {pow_result}")
         return False
+
+    def verify_signature(pub_key, signature, *parameters):
+        if zil_config["verify_sign"] is False:
+            return True
+
+        key = crypto.ZilKey(str_public=pub_key)
+
+        msg_to_verify = b""
+        for param in parameters:
+            if isinstance(param, bytes):
+                b_param = param
+            elif isinstance(param, str):
+                b_param = crypto.hex_str_to_bytes(param)
+            elif isinstance(param, bool):
+                b_param = b"\x01" if param else b"\x00"
+            elif isinstance(param, int):
+                b_param = crypto.int_to_bytes(param, n_bytes=8)
+            else:
+                logging.warning(f"wrong data type")
+                return False
+
+            msg_to_verify += b_param
+
+        return key.verify(signature, msg_to_verify)

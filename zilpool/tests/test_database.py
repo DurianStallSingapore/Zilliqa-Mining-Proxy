@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import pytest
+import random
 
 from zilpool.database import init_db
 from zilpool.database.basemodel import db, drop_all
@@ -75,11 +76,12 @@ class TestDatabase:
         drop_all()
 
         header = rand_hex_str(64, prefix="0x")
-        seed = rand_hex_str(64, prefix="0x")
+        # seed = rand_hex_str(64, prefix="0x")
+        block_num = random.randint(0, 1_000_0000)
         boundary = rand_hex_str(64, prefix="0x")
         pub_key = ZilKey.generate_key_pair().keypair_str.public
 
-        work = PowWork.new_work(header, seed, boundary, pub_key=pub_key)
+        work = PowWork.new_work(header, block_num, boundary, pub_key=pub_key)
         work.pow_fee = 2
         work.save()
         check_doc_count(1)

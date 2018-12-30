@@ -21,6 +21,7 @@ import mongoengine as mg
 from mongoengine import Q
 
 from .basemodel import ModelMixin
+from ..pyzil import crypto, ethash
 
 
 class PowWork(ModelMixin, mg.Document):
@@ -30,6 +31,7 @@ class PowWork(ModelMixin, mg.Document):
     pub_key = mg.StringField(max_length=128)
     signature = mg.StringField(max_length=256)
 
+    block_num = mg.IntField(default=0)
     start_time = mg.DateTimeField(default=datetime.utcnow)
     expire_time = mg.DateTimeField()
 
@@ -45,13 +47,15 @@ class PowWork(ModelMixin, mg.Document):
         return f"[PowWork: {self.header}, {self.finished}, {self.expire_time}]"
 
     @classmethod
-    def new_work(cls, header: str, seed: str, boundary: str,
+    def new_work(cls, header: str, block_num: int, boundary: str,
                  pub_key="", signature="", timeout=120):
         start_time = datetime.utcnow()
         expire_time = start_time + timedelta(seconds=timeout)
+        seed = ethash.block_num_to_seed(block_num)
+        seed = crypto.bytes_to_hex_str_0x(seed)
 
         return cls(header=header, seed=seed, boundary=boundary,
-                   pub_key=pub_key, signature=signature,
+                   pub_key=pub_key, signature=signature, block_num=block_num,
                    start_time=start_time, expire_time=expire_time)
 
     @classmethod
@@ -89,7 +93,8 @@ class PowWork(ModelMixin, mg.Document):
 
     def save_result(self, nonce: str, mix_digest: str, hash_result: str,
                     miner_wallet: str, worker_name: str):
-        pow_result = PowResult(header=self.header, seed=self.seed, hash_result=hash_result,
+        pow_result = PowResult(header=self.header, seed=self.seed,
+                               block_num=self.block_num, hash_result=hash_result,
                                boundary=self.boundary, pub_key=self.pub_key,
                                mix_digest=mix_digest, nonce=nonce, verified=False,
                                miner_wallet=miner_wallet, worker_name=worker_name)
@@ -112,6 +117,7 @@ class PowResult(ModelMixin, mg.Document):
     nonce = mg.StringField(max_length=128, required=True)
     hash_result = mg.StringField(max_length=128, required=True)
 
+    block_num = mg.IntField(default=0)
     finished_time = mg.DateTimeField(default=datetime.utcnow)
     verified_time = mg.DateTimeField()
 
