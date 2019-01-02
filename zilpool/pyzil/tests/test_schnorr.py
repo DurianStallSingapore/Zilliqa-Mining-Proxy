@@ -18,6 +18,8 @@ import os
 import json
 import random
 
+import pytest
+
 from zilpool.pyzil import crypto
 from zilpool.pyzil.crypto import bytes_to_int as b2i
 from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
@@ -60,3 +62,20 @@ class TestSchnorr:
             assert signature1 != signature2
             assert schnorr.verify(msg, signature1, key.keypair_bytes.public)
             assert schnorr.verify(msg, signature2, key.keypair_bytes.public)
+
+    def test_encode_decode(self):
+        for i in range(10):
+            priv_key = schnorr.gen_private_key()
+            pub_key = schnorr.get_public_key(priv_key)
+
+            encoded_pub = schnorr.encode_public(pub_key.x, pub_key.y,
+                                                compressed=True)
+            decoded_pub = schnorr.decode_public(encoded_pub)
+
+            assert pub_key == decoded_pub
+
+            encoded_pub = schnorr.encode_public(pub_key.x, pub_key.y,
+                                                compressed=False)
+            decoded_pub = schnorr.decode_public(encoded_pub)
+
+            assert pub_key == decoded_pub

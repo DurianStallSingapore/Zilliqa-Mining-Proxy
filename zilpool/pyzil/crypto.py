@@ -21,7 +21,8 @@ from collections import namedtuple
 import string
 import hashlib
 import secrets
-import coincurve
+
+from zilpool.pyzil import schnorr
 
 
 TOKEN_NUM_BYTES = 32
@@ -126,21 +127,8 @@ def address_from_public_key(str_public: Union[str, bytes]) -> str:
     return ZilKey(str_public=str_public).address
 
 
-def decode_public(public: Union[str, bytes]) -> (int, int):
-    if isinstance(public, str):
-        public = hex_str_to_bytes(public)
-    key = coincurve.PublicKey(public)
-    return key.point()
-
-
-def encode_public(x: int, y: int, compressed=True) -> str:
-    key = coincurve.PublicKey.from_point(x, y)
-    return bytes_to_hex_str(key.format(compressed=compressed))
-
-
 # Zilliqa Key
 KeyPair = namedtuple("KeyPair", ["public", "private"])
-Point = namedtuple("Point", ["x", "y"])
 
 
 class ZilKey:
@@ -158,49 +146,49 @@ class ZilKey:
         self.bytes_public = str_public
         self.bytes_private = str_private
 
+        # the pub_key is a Point on curve
         self.pub_key = None
+        # the private_key is big integer less than curve order
         self.private_key = None
 
         self._generate_keys()
 
     def _generate_keys(self):
         if self.bytes_private:
-            self.private_key = coincurve.PrivateKey.from_int(
-                bytes_to_int(self.bytes_private)
-            )
+            self.private_key = bytes_to_int(self.bytes_private)
+            assert self.private_key < schnorr.CURVE.q
 
         if self.bytes_public:
-            self.pub_key = coincurve.PublicKey(
+            self.pub_key = schnorr.decode_public(
                 self.bytes_public
             )
 
         # check keys if set both
         if self.private_key and self.pub_key:
-            assert self.private_key.public_key == self.pub_key, "public key mismatch"
+            _pub_key = schnorr.get_public_key(self.private_key)
+            assert _pub_key == self.pub_key, "public key mismatch"
 
         # generate pub_key if not set
         if self.private_key and not self.pub_key:
-            self.pub_key = self.private_key.public_key
+            self.pub_key = schnorr.get_public_key(self.private_key)
+
+    @property
+    def encoded_pub_key(self):
+        return schnorr.encode_public(self.pub_key.x, self.pub_key.y)
+
+    @property
+    def encoded_private_key(self):
+        return self.private_key and int_to_bytes(self.private_key)
 
     @property
     def keypair_str(self) -> KeyPair:
-        return KeyPair(bytes_to_hex_str(self.pub_key.format()),
-                       self.private_key and self.private_key.to_hex())
+        return KeyPair(bytes_to_hex_str(self.encoded_pub_key),
+                       self.private_key and int_to_hex_str(self.private_key))
 
     @property
     def keypair_bytes(self) -> KeyPair:
-        return KeyPair(self.pub_key.format(),
-                       self.private_key and self.private_key.secret)
-
-    @property
-    def keypair_int(self) -> KeyPair:
-        return KeyPair(bytes_to_int(self.pub_key.format(), "big"),
-                       self.private_key and self.private_key.to_int())
-
-    @property
-    def keypair_point(self) -> KeyPair:
-        return KeyPair(Point(*self.pub_key.point()),
-                       self.private_key and self.private_key.to_int())
+        return KeyPair(self.encoded_pub_key,
+                       self.encoded_private_key)
 
     def __str__(self):
         return str(self.keypair_str)
@@ -219,9 +207,8 @@ class ZilKey:
             raise RuntimeError("no private key")
         message = ensure_bytes(message)
 
-        from .schnorr import sign
         return bytes_to_hex_str(
-            sign(message, self.keypair_bytes.private)
+            schnorr.sign(message, self.keypair_bytes.private)
         )
 
     def verify(self, signature: str, message: bytes) -> bool:
@@ -229,8 +216,7 @@ class ZilKey:
             signature = hex_str_to_bytes(signature)
         message = ensure_bytes(message)
 
-        from .schnorr import verify
-        return verify(message, signature, self.keypair_bytes.public)
+        return schnorr.verify(message, signature, self.keypair_bytes.public)
 
     @classmethod
     def load_mykey_txt(cls, key_file="mykey.txt"):
@@ -241,6 +227,6 @@ class ZilKey:
     @classmethod
     def generate_key_pair(cls):
         # generate new private key
-        private_key = coincurve.PrivateKey(secret=None)
-        zil_key = cls(str_private=private_key.to_hex())
+        private_key = schnorr.gen_private_key()
+        zil_key = cls(str_private=int_to_bytes(private_key))
         return zil_key
