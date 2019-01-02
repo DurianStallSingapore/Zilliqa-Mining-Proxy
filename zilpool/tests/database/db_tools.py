@@ -203,6 +203,9 @@ def keypairs(params=None):
 
         with open(file_path, "r") as f:
             for line in f.readlines():
+                line = line.strip()
+                if len(line) <= 0:
+                    continue
                 parts = line.strip().split(",")
                 if len(parts) < 1:
                     print(f"Invalid Key in {line}")
