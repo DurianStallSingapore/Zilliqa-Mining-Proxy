@@ -79,7 +79,7 @@ class PowWork(ModelMixin, mg.Document):
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one
         return cursor.first()
 
-    def increase_dispatched(self, count=1, inc_expire_seconds=1):
+    def increase_dispatched(self, count=1, inc_expire_seconds=0):
         if inc_expire_seconds > 0:
             new_expire_time = self.expire_time + timedelta(seconds=inc_expire_seconds)
             res = self.update(inc__dispatched=count, set__expire_time=new_expire_time)

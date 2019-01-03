@@ -31,14 +31,15 @@ def init_apis(config):
 
     @method
     async def eth_getWork() -> [List, Tuple]:
-        min_fee = config.mining["min_fee"]
-        max_dispatch = config.mining["max_dispatch"]
+        min_fee = config.mining.get("min_fee", 0.0)
+        max_dispatch = config.mining.get("max_dispatch", 10)
+        inc_expire = config.mining.get("inc_expire", 0)
         work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
         if not work:
             return no_work
 
-        if work.increase_dispatched(inc_expire_seconds=5):
+        if work.increase_dispatched(inc_expire_seconds=inc_expire):
             return work.header, work.seed, work.boundary, True, 0
         logging.warning(f"increase_dispatched failed, {work}")
         return no_work
