@@ -15,6 +15,8 @@
 # limitations under the License.
 
 import logging
+from logging import handlers
+
 from json import dumps
 from functools import partial
 from aiohttp import web
@@ -22,9 +24,29 @@ from jsonrpcserver import async_dispatch
 from jsonrpcserver.response import ExceptionResponse
 
 
-# setup logger
-FORMAT = "[%(asctime)s %(levelname)-6s %(filename)s:%(lineno)s] %(message)s"
-logging.basicConfig(format=FORMAT, level=logging.INFO)
+# setup root logger
+FORMATTER = logging.Formatter(
+    "[%(asctime)s %(levelname)-6s %(filename)s:%(lineno)s] %(message)s"
+)
+
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.INFO)
+
+std_handler = logging.StreamHandler()
+std_handler.setFormatter(FORMATTER)
+rootLogger.addHandler(std_handler)
+
+
+def setup_logging(log_config):
+    level = log_config.get("level", "info").upper()
+    logging.getLogger().setLevel(level=level)
+    logfile = log_config.get("file", "")
+    if logfile:
+        fh = handlers.RotatingFileHandler(
+            logfile, maxBytes=8 * 1024 * 1024, backupCount=5
+        )
+        fh.setFormatter(FORMATTER)
+        rootLogger.addHandler(fh)
 
 
 def create_api_handler(config=None):
@@ -56,8 +78,8 @@ def start_api_server(conf_file=None, port=None):
     # merge user's config with default.conf
     config = utils.merge_config(conf_file)
 
-    level = config.get("logging", "info").upper()
-    logging.getLogger().setLevel(level=level)
+    # setup logfile
+    setup_logging(config.logging)
 
     # init database and apis
     init_db(config)
@@ -73,5 +95,5 @@ def start_api_server(conf_file=None, port=None):
     app.router.add_post(api_path, create_api_handler(config))
 
     # start ioloop
-    print(f"API endpoint: http://{host}:{port}{api_path}")
+    logging.critical(f"API endpoint: http://{host}:{port}{api_path}")
     web.run_app(app, host=host, port=port)
