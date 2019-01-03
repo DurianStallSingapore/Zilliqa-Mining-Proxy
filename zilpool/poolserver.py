@@ -67,10 +67,11 @@ def start_api_server(conf_file=None, port=None):
     if port is None:
         port = config.api_server.get("port", "4202")
     api_path = config.api_server.get("path", "/api")
+    host = config.api_server.get("host", "0.0.0.0")
 
     app = web.Application(debug=config.debug)
     app.router.add_post(api_path, create_api_handler(config))
 
     # start ioloop
-    print(f"API endpoint: http://0.0.0.0:{port}{api_path}")
-    web.run_app(app, port=port)
+    print(f"API endpoint: http://{host}:{port}{api_path}")
+    web.run_app(app, host=host, port=port)
