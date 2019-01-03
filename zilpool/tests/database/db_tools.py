@@ -206,7 +206,7 @@ def keypairs(params=None):
                 line = line.strip()
                 if len(line) <= 0:
                     continue
-                parts = line.strip().split(" ")
+                parts = line.split(" ")
                 if len(parts) < 1:
                     print(f"Invalid Key in {line}")
                     continue
@@ -230,7 +230,7 @@ def keypairs(params=None):
         keys = []
         for i in range(num_nodes):
             key = crypto.ZilKey.generate_key_pair()
-            keys.append(",".join(key.keypair_str))
+            keys.append(" ".join(key.keypair_str))
 
         with open(file_path, "w") as f:
             f.write("\n".join(keys))

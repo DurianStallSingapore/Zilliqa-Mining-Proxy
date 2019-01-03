@@ -240,7 +240,7 @@ def load_keys(args):
 
     with open(args.keys, "r") as f:
         for line in f.readlines():
-            public, private = line.strip().split(",")
+            public, private = line.strip().split(" ")
             key = ZilKey(str_public=public, str_private=private)
             keys.append(key)
     return keys
@@ -275,7 +275,7 @@ def keygen(args):
     keys = []
     for i in range(args.nodes):
         key = ZilKey.generate_key_pair()
-        keys.append(",".join(key.keypair_str))
+        keys.append(" ".join(key.keypair_str))
 
     with open(args.keys, "w") as f:
         f.write("\n".join(keys))
