@@ -206,14 +206,12 @@ def keypairs(params=None):
                 line = line.strip()
                 if len(line) <= 0:
                     continue
-                parts = line.strip().split(",")
+                parts = line.strip().split(" ")
                 if len(parts) < 1:
                     print(f"Invalid Key in {line}")
                     continue
                 public = parts[0]
-                private = None
-                if len(parts) > 1:
-                    private = parts[1]
+                private = None                
 
                 key = crypto.ZilKey(str_public=public, str_private=private)
                 keys.append(key)
