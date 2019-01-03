@@ -19,7 +19,7 @@ from functools import wraps
 from inspect import isclass
 
 from mongoengine import connect, Document, OperationError
-from mongoengine.connection import get_db
+from mongoengine.connection import get_db, MongoEngineConnectionError
 
 from ..common.local import LocalProxy
 
@@ -33,9 +33,13 @@ def init_db(config=None):
     """
     uri = config.database["uri"]
 
-    logging.info(f"Connecting to {uri}")
-    connect(host=uri)
-    logging.info("Database connected!")
+    logging.critical(f"Connecting to {uri}")
+    try:
+        connect(host=uri)
+        logging.critical("Database connected!")
+    except MongoEngineConnectionError:
+        logging.fatal("Failed connect to MongoDB!")
+        raise
 
 
 def fail_safe(f):
