@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 import mongoengine as mg
 from mongoengine import Q
 
+from . import miner
 from .basemodel import ModelMixin
 from ..pyzil import crypto, ethash
 
@@ -135,3 +136,6 @@ class PowResult(ModelMixin, mg.Document):
             query = query & Q(pub_key=pub_key)
         cursor = cls.objects(query).order_by(order)    # default to get latest one
         return cursor.first()
+
+    def get_worker(self):
+        return miner.Worker.get_or_create(self.miner_wallet, self.worker_name)

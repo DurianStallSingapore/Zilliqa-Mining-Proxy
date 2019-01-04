@@ -105,6 +105,13 @@ def init_apis(config):
 
         verified = verified == "0x01"
         if pow_result.update(verified=verified):
+            worker = pow_result.get_worker()
+            if not worker:
+                logging.warning(f"worker not found, {pow_result.worker_name}"
+                                f"@{pow_result.miner_wallet}")
+            else:
+                worker.update_stat(inc_verified=1)
+
             return True
 
         logging.warning(f"Failed update pow result {pow_result}")
