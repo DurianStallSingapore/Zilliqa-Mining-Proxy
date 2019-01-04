@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import pytest
 
 from zilpool.pyzil import crypto
@@ -23,6 +24,25 @@ def path_join(*path):
     import os
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(cur_dir, *path)
+
+
+def load_ts_fixtures(file_name):
+    with open(file_name) as f:
+        content = f.read()
+
+    results = []
+    re_list = re.compile(r"\{(?P<entry>.+?)\},", re.DOTALL)
+    for match in re_list.finditer(content):
+        entry = match.group("entry")
+        items = [item.strip() for item in entry.strip().split(",") if item and item.strip()]
+        entry_dict = {}
+        for item in items:
+            key, value = [v.strip() for v in item.strip().split(":", 2) if v and v.strip()]
+            entry_dict[key] = value.strip("'").strip('"')
+
+        results.append(entry_dict)
+
+    return results
 
 
 class TestCrypto:
@@ -118,4 +138,21 @@ class TestCrypto:
 
         key2 = crypto.ZilKey.load_mykey_txt(path_join("mykey2.txt"))
         assert key2.address == "e2406d084955e2d2ba8e8eaf7fe1c6a3e9ab3ea9"
+
+    def test_address(self):
+        addresses = load_ts_fixtures(path_join("address.fixtures.ts"))
+        for addr in addresses:
+            from_file = addr["address"].lower()
+            from_private = crypto.address_from_private_key(addr["private"])
+            assert from_private == from_file
+            from_public = crypto.address_from_public_key(addr["public"])
+            assert from_public == from_file
+
+    def test_keypairs(self):
+        keypairs = load_ts_fixtures(path_join("keypairs.fixtures.ts"))
+        for pair in keypairs:
+            key_from_private = crypto.ZilKey(str_private=pair["private"])
+            key_from_public = crypto.ZilKey(str_public=pair["public"])
+
+            assert key_from_private.pub_key == key_from_public.pub_key
 

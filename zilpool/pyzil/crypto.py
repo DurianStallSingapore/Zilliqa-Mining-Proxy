@@ -22,7 +22,7 @@ import string
 import hashlib
 import secrets
 
-from zilpool.pyzil import schnorr
+from . import schnorr
 
 
 TOKEN_NUM_BYTES = 32
