@@ -17,8 +17,8 @@
 import logging
 from jsonrpcserver import method
 
-from ..database import pow, zilnode
-from ..pyzil import crypto
+from zilpool.pyzil import crypto
+from zilpool.database import pow, zilnode
 
 
 def init_apis(config):

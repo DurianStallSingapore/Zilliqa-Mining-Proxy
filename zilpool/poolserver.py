@@ -71,9 +71,9 @@ def create_api_handler(config=None):
 
 
 def start_api_server(conf_file=None, port=None):
-    from .common import utils
-    from .apis import load_apis
-    from .database import init_db
+    from zilpool.common import utils
+    from zilpool.apis import load_apis
+    from zilpool.database import init_db
 
     # merge user's config with default.conf
     config = utils.merge_config(conf_file)

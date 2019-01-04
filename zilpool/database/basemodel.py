@@ -21,7 +21,7 @@ from inspect import isclass
 from mongoengine import connect, Document, OperationError
 from mongoengine.connection import get_db, MongoEngineConnectionError
 
-from ..common.local import LocalProxy
+from zilpool.common.local import LocalProxy
 
 db = LocalProxy(get_db)
 

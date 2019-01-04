@@ -20,9 +20,10 @@ from datetime import datetime, timedelta
 import mongoengine as mg
 from mongoengine import Q
 
+from zilpool.pyzil import crypto, ethash
+
 from . import miner
 from .basemodel import ModelMixin
-from ..pyzil import crypto, ethash
 
 
 class PowWork(ModelMixin, mg.Document):
