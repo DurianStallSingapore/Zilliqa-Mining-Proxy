@@ -18,6 +18,7 @@
 
 import os
 import sys
+import time
 import random
 import asyncio
 import argparse
@@ -39,9 +40,14 @@ class Node:
         self.key = key
         self.args = args
         self.node_id = node_id
-        self.block = args.block
+        self.block = 0
+        self.pow_end_time = None
 
         self.rpc_client = None
+
+    @property
+    def pow_timeout(self):
+        return int(self.pow_end_time - time.time())
 
     def __str__(self):
         return f"[Node {self.node_id}]"
@@ -65,7 +71,7 @@ class Node:
         }
 
     def make_work_request(self, work, diff):
-        timeout = crypto.int_to_bytes(self.args.pow, n_bytes=4)
+        timeout = crypto.int_to_bytes(self.pow_timeout, n_bytes=4)
         boundary = ethash.difficulty_to_boundary(diff)
 
         # requests are bytes
@@ -172,7 +178,7 @@ class Node:
 
     async def build_request_and_run(self, method, work, diff,
                                     func_build_req, func_resp,
-                                    retry=5, sleep=5):
+                                    retry=5, sleep=5.0):
         req = func_build_req(work, diff)
         for i in range(retry):
             resp = await self.do_request(method, req)
@@ -196,7 +202,7 @@ class Node:
         return await self.build_request_and_run(
             "zil_checkWorkStatus", work, diff,
             self.make_check_request, lambda resp: resp.result[0],
-            retry=retry, sleep=self.args.pow / retry
+            retry=retry, sleep=self.pow_timeout / retry
         )
 
     async def verify_result(self, work, diff, retry=3):
@@ -206,29 +212,26 @@ class Node:
             retry=retry, sleep=2
         )
 
-    async def run(self, session):
-        waiting = random.randrange(1, 10)
+    async def do_pow(self, session, block):
+        self.rpc_client = AiohttpClient(session, self.args.proxy, basic_logging=True)
+
+        self.block = block
+        self.pow_end_time = time.time() + self.args.pow
+
+        waiting = random.randrange(1, 5)
+        self.log("=" * 40)
         self.log(f"starting in {waiting} seconds ......")
         await asyncio.sleep(waiting)
 
-        while True:
-            self.log("=" * 40)
-            self.log(f"Start Shard PoW at block {self.block}")
+        work = self.create_work()
 
-            self.rpc_client = AiohttpClient(session, self.args.proxy, basic_logging=True)
+        self.log(f"Start Shard PoW at block {self.block}")
+        await self.start_pow(work, self.args.diff)
 
-            work = self.create_work()
+        self.log(f"Start DS PoW at block {self.block}")
+        await self.start_pow(work, self.args.ds_diff)
 
-            await self.start_pow(work, self.args.diff)
-
-            self.log(f"Start DS PoW at block {self.block}")
-            await self.start_pow(work, self.args.ds_diff)
-
-            self.log(f"Sleep {self.args.epoch} seconds, waiting for next POW")
-
-            await asyncio.sleep(self.args.epoch)
-
-            self.block += 1
+        self.log(f"Pow Done at block {self.block}")
 
 
 def load_keys(args):
@@ -244,6 +247,20 @@ def load_keys(args):
             key = ZilKey(str_public=public, str_private=private)
             keys.append(key)
     return keys
+
+
+async def start_loop(nodes, session, args):
+    cur_block = args.block
+    while True:
+        print(f"[LOOP] Start PoW at block {cur_block}")
+
+        tasks = [node.do_pow(session, cur_block) for node in nodes]
+        await asyncio.wait(tasks, timeout=args.pow)
+
+        print(f"[LOOP] Sleep {args.epoch} seconds, waiting for next POW")
+        await asyncio.sleep(args.epoch)
+
+        cur_block += 1
 
 
 def run(args):
@@ -264,8 +281,7 @@ def run(args):
     loop = asyncio.get_event_loop()
     session = ClientSession(loop=loop)
     try:
-        tasks = [node.run(session) for node in nodes]
-        loop.run_until_complete(asyncio.wait(tasks))
+        loop.run_until_complete(start_loop(nodes, session, args))
     finally:
         session.close()
 
