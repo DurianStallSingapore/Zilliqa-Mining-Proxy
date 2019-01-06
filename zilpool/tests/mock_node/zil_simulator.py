@@ -249,18 +249,20 @@ def load_keys(args):
     return keys
 
 
-async def start_loop(nodes, session, args):
+async def start_loop(loop, args, nodes):
     cur_block = args.block
-    while True:
-        print(f"[LOOP] Start PoW at block {cur_block}")
 
-        tasks = [node.do_pow(session, cur_block) for node in nodes]
-        await asyncio.wait(tasks, timeout=args.pow)
+    async with ClientSession(loop=loop) as session:
+        while True:
+            print(f"[LOOP] Start PoW at block {cur_block}")
 
-        print(f"[LOOP] Sleep {args.epoch} seconds, waiting for next POW")
-        await asyncio.sleep(args.epoch)
+            tasks = [node.do_pow(session, cur_block) for node in nodes]
+            await asyncio.wait(tasks, timeout=args.pow)
 
-        cur_block += 1
+            print(f"[LOOP] Sleep {args.epoch} seconds, waiting for next POW")
+            await asyncio.sleep(args.epoch)
+
+            cur_block += 1
 
 
 def run(args):
@@ -279,11 +281,7 @@ def run(args):
 
     # set up aio client session and run
     loop = asyncio.get_event_loop()
-    session = ClientSession(loop=loop)
-    try:
-        loop.run_until_complete(start_loop(nodes, session, args))
-    finally:
-        session.close()
+    loop.run_until_complete(start_loop(loop, args, nodes))
 
 
 def keygen(args):
