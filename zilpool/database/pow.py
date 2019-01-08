@@ -81,6 +81,43 @@ class PowWork(ModelMixin, mg.Document):
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one
         return cursor.first()
 
+    @classmethod
+    def calc_seconds_to_next_pow(cls):
+        # 1. get the latest work order by expire_time
+        latest_work = cls.objects().order_by("-expire_time").first()
+        if not latest_work:
+            return 0     # no work, return default
+
+        # 2. check expire_time
+        now = datetime.utcnow()
+        if now <= latest_work.expire_time:
+            return 0      # we still within pow window
+
+        # 3. get last work in prev epoch
+        cur_block = latest_work.block_num
+        prev_block = cur_block - 1
+        prev_epoch_work = cls.objects(block_num=prev_block).order_by("-expire_time").first()
+        if not prev_epoch_work:
+            return 0      # can find work in prev epoch
+
+        epoch_time = latest_work.start_time - prev_epoch_work.expire_time
+
+        # 4. get the first work in this epoch
+        first_work_this_epoch = cls.objects(block_num=cur_block).order_by("expire_time").first()
+        if first_work_this_epoch:
+            epoch_time = first_work_this_epoch.start_time - prev_epoch_work.expire_time
+
+        if epoch_time.total_seconds() <= 0:
+            return 0      # epoch time is less than pow window, overlap
+
+        # 5. roughly calc next pow time
+        next_pow_time = latest_work.start_time + epoch_time
+
+        if now > next_pow_time:
+            return 0      # pow already start but no work received
+
+        return (next_pow_time - now).total_seconds()
+
     def increase_dispatched(self, count=1, inc_expire_seconds=0):
         if inc_expire_seconds > 0:
             new_expire_time = self.expire_time + timedelta(seconds=inc_expire_seconds)

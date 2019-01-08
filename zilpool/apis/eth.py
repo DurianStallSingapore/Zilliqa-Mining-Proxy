@@ -27,7 +27,10 @@ from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
 
 
 def init_apis(config):
-    no_work = ("", "", "", False, 10)
+
+    def no_work():
+        seconds_to_next_pow = pow.PowWork.calc_seconds_to_next_pow()
+        return "", "", "", False, int(seconds_to_next_pow)
 
     @method
     async def eth_getWork() -> [List, Tuple]:
@@ -37,12 +40,12 @@ def init_apis(config):
         work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
         if not work:
-            return no_work
+            return no_work()
 
         if work.increase_dispatched(inc_expire_seconds=inc_expire):
             return work.header, work.seed, work.boundary, True, 0
         logging.warning(f"increase_dispatched failed, {work}")
-        return no_work
+        return no_work()
 
     @method
     async def eth_submitWork(nonce: str, header: str, mix_digest: str,
