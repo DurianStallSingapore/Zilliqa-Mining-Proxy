@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import mongoengine as mg
+from mongoengine import Q
 
 from .basemodel import ModelMixin
 
@@ -82,6 +83,23 @@ class Worker(ModelMixin, mg.Document):
             set__worker_name=worker_name
         )
         return worker
+
+    @classmethod
+    def active_count(cls):
+        from . import pow
+        two_hours = datetime.utcnow() - timedelta(hours=2)
+
+        match = {
+            "finished_time": {
+                '$gte': two_hours,
+            }
+        }
+        group = {
+            "_id": {"miner_wallet": "$miner_wallet", 
+                    "worker_name": "$worker_name",},
+        }
+
+        return pow.PowResult.aggregate_count(match, group)
 
     def update_stat(self, inc_submitted=0, inc_failed=0, inc_finished=0, inc_verified=0):
         update_kwargs = {

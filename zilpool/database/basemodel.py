@@ -60,6 +60,21 @@ def drop_all():
 class ModelMixin:
 
     @classmethod
+    def count(cls, q_obj=None, **query):
+        return cls.objects(q_obj=q_obj, **query).count()
+
+    @classmethod
+    def aggregate_count(cls, match, group):
+        pipeline = [
+            {"$match": match},
+            {"$group": group},
+            {"$count": "active"},
+        ]
+
+        res = list(cls.objects.aggregate(*pipeline))
+        return res[0]["active"] if res else 0
+
+    @classmethod
     @fail_safe
     def get(cls, first=True, **kwargs):
         cursor = cls.objects(**kwargs)

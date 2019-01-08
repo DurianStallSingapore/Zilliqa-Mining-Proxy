@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import logging
+from datetime import datetime, timedelta
 
 import mongoengine as mg
 
@@ -39,3 +40,19 @@ class ZilNode(ModelMixin, mg.Document):
         if authorized is not None:
             query = query & mg.Q(authorized=authorized)
         return cls.objects(query).first()
+
+    @classmethod
+    def active_count(cls):
+        from . import pow
+        one_day = datetime.utcnow() - timedelta(days=1)
+
+        match = {
+            "start_time": {
+                '$gte': one_day,
+            }
+        }
+        group = {
+            "_id": {"pub_key": "$pub_key"},
+        }
+
+        return pow.PowWork.aggregate_count(match, group)

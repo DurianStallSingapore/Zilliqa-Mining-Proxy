@@ -82,9 +82,13 @@ class PowWork(ModelMixin, mg.Document):
         return cursor.first()
 
     @classmethod
+    def get_latest_work(cls):
+        return cls.objects().order_by("-expire_time").first()
+
+    @classmethod
     def calc_seconds_to_next_pow(cls):
         # 1. get the latest work order by expire_time
-        latest_work = cls.objects().order_by("-expire_time").first()
+        latest_work = cls.get_latest_work()
         if not latest_work:
             return 0     # no work, return default
 
