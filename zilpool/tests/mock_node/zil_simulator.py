@@ -276,7 +276,8 @@ def run(args):
     if len(keys) < args.nodes:
         print(f"not enough keypairs for {args.nodes} nodes, pls run keygen first")
 
-    nodes = [Node(i, keys[i], args) for i in range(args.nodes)]
+    rand_keys = random.sample(keys, args.nodes)
+    nodes = [Node(i, key, args) for i, key in enumerate(rand_keys)]
     print(f"{len(nodes)} nodes created, starting to run ...")
 
     # set up aio client session and run
