@@ -33,6 +33,7 @@ def init_apis(config):
         return "", "", "", False, int(seconds_to_next_pow)
 
     @method
+    @utils.args_to_lower
     async def eth_getWork() -> [List, Tuple]:
         min_fee = config.mining.get("min_fee", 0.0)
         max_dispatch = config.mining.get("max_dispatch", 10)
@@ -48,6 +49,7 @@ def init_apis(config):
         return no_work()
 
     @method
+    @utils.args_to_lower
     async def eth_submitWork(nonce: str, header: str, mix_digest: str,
                              boundary: str, miner_wallet: str,
                              worker_name: str="") -> bool:
@@ -113,6 +115,7 @@ def init_apis(config):
         return True
 
     @method
+    @utils.args_to_lower
     async def eth_submitHashrate(hashrate: str, miner_wallet: str,
                                  worker_name: str="") -> bool:
         hashrate_int, miner_wallet_bytes = h2i(hashrate), h2b(miner_wallet)

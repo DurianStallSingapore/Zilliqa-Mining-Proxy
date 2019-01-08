@@ -18,6 +18,7 @@ import os
 import re
 import yaml
 import collections
+from functools import wraps
 
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -75,3 +76,13 @@ re_valid_str = re.compile(r"^[a-zA-Z0-9_.-]*$")
 
 def is_valid_str(input_str: str) -> bool:
     return re_valid_str.match(input_str) is not None
+
+
+def args_to_lower(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        args = [arg.lower() if isinstance(arg, str) else arg
+                for arg in args]
+        return func(*args, **kwargs)
+
+    return wrapper

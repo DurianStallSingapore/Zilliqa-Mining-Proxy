@@ -17,6 +17,7 @@
 import logging
 from jsonrpcserver import method
 
+from zilpool.common import utils
 from zilpool.pyzil import crypto
 from zilpool.database import pow, zilnode
 
@@ -25,6 +26,7 @@ def init_apis(config):
     zil_config = config["api_server"]["zil"]
 
     @method
+    @utils.args_to_lower
     async def zil_requestWork(pub_key: str, header: str,
                               block_num: str, boundary: str,
                               timeout: str, signature: str) -> bool:
@@ -59,6 +61,7 @@ def init_apis(config):
     work_not_done = (False, "", "", "")
 
     @method
+    @utils.args_to_lower
     async def zil_checkWorkStatus(pub_key: str, header: str,
                                   boundary: str, signature: str) -> [list, tuple]:
         assert (len(pub_key) == 68 and
@@ -82,6 +85,7 @@ def init_apis(config):
         return True, pow_result.nonce, pow_result.header, pow_result.mix_digest
 
     @method
+    @utils.args_to_lower
     async def zil_verifyResult(pub_key: str, verified: str,
                                header: str, boundary: str, signature: str) -> bool:
         assert (len(pub_key) == 68 and
