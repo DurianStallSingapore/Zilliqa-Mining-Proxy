@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 import mongoengine as mg
@@ -38,8 +39,7 @@ class Miner(ModelMixin, mg.Document):
 
     nick_name = mg.StringField(max_length=64, default="")
     email = mg.StringField(max_length=128)
-    join_date = mg.DateTimeField(default=datetime.utcnow)
-    last_updated = mg.DateTimeField(default=datetime.utcnow)
+    join_date = mg.DateTimeField()
 
     def __str__(self):
         return f"[Miner: {self.wallet_address}, {self.authorized}]"
@@ -54,8 +54,24 @@ class Miner(ModelMixin, mg.Document):
                 upsert=True, new=True,
                 set__wallet_address=wallet_address
             )
+            if miner.join_date is None:
+                miner.update(join_date=datetime.utcnow())
             return miner
         return None
+
+    @property
+    def workers(self):
+        return Worker.get_all(wallet_address=self.wallet_address)
+
+    def works_stats(self):
+        stats = defaultdict(int)
+        for worker in self.workers:
+            stats["work_submitted"] += worker.work_submitted
+            stats["work_failed"] += worker.work_failed
+            stats["work_finished"] += worker.work_finished
+            stats["work_verified"] += worker.work_verified
+
+        return stats
 
 
 class Worker(ModelMixin, mg.Document):
@@ -110,6 +126,14 @@ class Worker(ModelMixin, mg.Document):
         }
         update_kwargs = {key: value for (key, value) in update_kwargs.items() if value > 0}
         return self.update(**update_kwargs)
+
+    def works_stats(self):
+        return {
+            "work_submitted": self.work_submitted,
+            "work_failed": self.work_failed,
+            "work_finished": self.work_finished,
+            "work_verified": self.work_verified,
+        }
 
 
 class HashRate(ModelMixin, mg.Document):

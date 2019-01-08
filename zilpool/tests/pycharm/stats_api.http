@@ -1,0 +1,59 @@
+########################################
+# stats
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats", "params": []}
+
+########################################
+# stats_current
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats_current", "params": []}
+
+
+########################################
+# stats_node
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats_node", "params": [
+"0x02d3c250564eb4fbe44878dedbc7b536799ff144f232bacfa926850f042dd7ec51"
+]}
+
+########################################
+# stats_node
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats_node", "params": [
+"02d3c250564eb4fbe44878dedbc7b536799ff144f232bacfa926850f042dd7ec51"
+]}
+
+########################################
+# stats_miner
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats_miner", "params": [
+"0x0123456789012345678901234567890123456789"
+]}
+
+########################################
+# stats_worker
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "stats_worker", "params": [
+"0x0123456789012345678901234567890123456789",
+"worker1"
+]}
+
+###

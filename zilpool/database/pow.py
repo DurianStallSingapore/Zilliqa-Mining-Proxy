@@ -34,7 +34,7 @@ class PowWork(ModelMixin, mg.Document):
     signature = mg.StringField(max_length=256)
 
     block_num = mg.IntField(default=0)
-    start_time = mg.DateTimeField(default=datetime.utcnow)
+    start_time = mg.DateTimeField()
     expire_time = mg.DateTimeField()
 
     finished = mg.BooleanField(default=False)
@@ -137,6 +137,7 @@ class PowWork(ModelMixin, mg.Document):
     def save_result(self, nonce: str, mix_digest: str, hash_result: str,
                     miner_wallet: str, worker_name: str):
         pow_result = PowResult(header=self.header, seed=self.seed,
+                               finished_time=datetime.utcnow(),
                                block_num=self.block_num, hash_result=hash_result,
                                boundary=self.boundary, pub_key=self.pub_key,
                                mix_digest=mix_digest, nonce=nonce, verified=False,
@@ -161,7 +162,7 @@ class PowResult(ModelMixin, mg.Document):
     hash_result = mg.StringField(max_length=128, required=True)
 
     block_num = mg.IntField(default=0)
-    finished_time = mg.DateTimeField(default=datetime.utcnow)
+    finished_time = mg.DateTimeField()
     verified_time = mg.DateTimeField()
 
     verified = mg.BooleanField(default=False)

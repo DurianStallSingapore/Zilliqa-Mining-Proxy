@@ -76,12 +76,19 @@ class ModelMixin:
 
     @classmethod
     @fail_safe
-    def get(cls, first=True, **kwargs):
+    def get(cls, first=True, order=None, **kwargs):
         cursor = cls.objects(**kwargs)
+        if order is not None:
+            cursor = cursor.order_by(order)
         if first:
             return cursor.first()
         else:
             return cursor.all()
+
+    @classmethod
+    @fail_safe
+    def get_all(cls, order=None, **kwargs):
+        return cls.get(first=False, order=order, **kwargs)
 
     @wraps(Document.save)
     @fail_safe

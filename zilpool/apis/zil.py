@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import logging
+from datetime import datetime
 from jsonrpcserver import method
 
 from zilpool.common import utils
@@ -108,7 +109,8 @@ def init_apis(config):
             return False
 
         verified = verified == "0x01"
-        if pow_result.update(verified=verified):
+        if pow_result.update(verified=verified,
+                             verified_time=datetime.utcnow()):
             worker = pow_result.get_worker()
             if not worker:
                 logging.warning(f"worker not found, {pow_result.worker_name}"
