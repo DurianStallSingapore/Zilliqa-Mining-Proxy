@@ -22,7 +22,7 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "stats_node", "params": [
-"0x02d3c250564eb4fbe44878dedbc7b536799ff144f232bacfa926850f042dd7ec51"
+"0x039e378309e6d1ea50e7e5f367f9ada23e660b24c4001fc416e788a858deffa678"
 ]}
 
 ########################################
@@ -53,7 +53,52 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "stats_worker", "params": [
 "0x0123456789012345678901234567890123456789",
-"worker1"
+"windows_worker1"
 ]}
 
+########################################
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# latest block, all miners
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": []}
+
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1, all miners
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": [
+1
+]}
+
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# latest block, specific miner, all workers
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": [
+null,
+"0x0123456789012345678901234567890123456789"
+]}
+
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1, specific miner and workers
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": [
+1,
+"0x0123456789012345678901234567890123456789",
+"windows_worker1"
+]}
 ###

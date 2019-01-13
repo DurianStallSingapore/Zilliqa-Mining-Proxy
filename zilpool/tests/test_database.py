@@ -17,14 +17,14 @@
 import pytest
 import random
 
-from zilpool.database import init_db
+from zilpool.database import init_db, connect_to_db
 from zilpool.database.basemodel import db, drop_all
 from zilpool.tests.test_config import get_database_debug_config
 from zilpool.pyzil.crypto import rand_hex_str, ZilKey
 
 
 class TestDatabase:
-    init_db(get_database_debug_config())
+    connect_to_db(get_database_debug_config())
 
     def test_init(self):
         result = db.command("ping")
@@ -105,3 +105,69 @@ class TestDatabase:
         assert work2.header == work.header, work2.boundary == work.boundary
 
         drop_all()
+
+    def test_node_owner(self):
+        import time
+        from datetime import datetime
+        from zilpool.database.zilnode import ZilNode, ZilNodeOwner
+
+        drop_all()
+
+        email = "test@test.com"
+        owner = ZilNodeOwner.create(email)
+        assert owner is not None
+        assert owner.email_verified is False
+        assert owner.pow_fee == 0.0
+        assert owner.balance == 0.0
+        assert owner.join_date <= datetime.utcnow()
+
+        key = ZilKey.generate_key_pair()
+        pub_key = key.keypair_str.public
+
+        pending = owner.request_node(pub_key)
+        assert pub_key in pending
+
+        node = ZilNode.get_by_pub_key(pub_key=pub_key, authorized=False)
+        assert node is not None
+        assert node.authorized is False
+
+        assert node.pow_fee == owner.pow_fee
+
+        code = owner.create_verify_code(expire_secs=10)
+        assert code
+
+        # should pass the 1st check
+        verified_owner = ZilNodeOwner.check_verify_code(code)
+        assert verified_owner
+        assert verified_owner == owner
+
+        # should fail the 2nd check
+        verified_owner = ZilNodeOwner.check_verify_code(code)
+        assert not verified_owner
+
+        # short expire time
+        code = owner.create_verify_code(expire_secs=0.1)
+        assert code
+        time.sleep(1)
+
+        # should fail the 1st check because expired
+        verified_owner = ZilNodeOwner.check_verify_code(code)
+        assert not verified_owner
+
+        code = owner.create_verify_code(expire_secs=30)
+        assert code
+
+        # should fail the 1st check because wrong code
+        verified_owner = ZilNodeOwner.check_verify_code(code.upper())
+        assert not verified_owner
+        verified_owner = ZilNodeOwner.check_verify_code(code.lower())
+        assert not verified_owner
+        verified_owner = ZilNodeOwner.check_verify_code(code)
+        assert verified_owner
+
+    def test_admin(self):
+        config = get_database_debug_config()
+
+        drop_all()
+        init_db(config)
+

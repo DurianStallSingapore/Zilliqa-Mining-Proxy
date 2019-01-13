@@ -82,8 +82,55 @@ class PowWork(ModelMixin, mg.Document):
         return cursor.first()
 
     @classmethod
-    def get_latest_work(cls):
-        return cls.objects().order_by("-expire_time").first()
+    def get_latest_block_num(cls):
+        latest_work = cls.get_latest_work()
+        return latest_work.block_num if latest_work else -1
+
+    @classmethod
+    def get_latest_work(cls, block_num=None, order="-expire_time"):
+        if block_num is None:
+            cursor = cls.objects()
+        else:
+            cursor = cls.objects(block_num=block_num)
+
+        return cursor.order_by(order).first()
+
+    @classmethod
+    def avg_pow_fee(cls, block_num=None):
+        if block_num is None:
+            block_num = cls.get_latest_block_num()
+        return cls.objects(block_num=block_num).average("pow_fee")
+
+    @classmethod
+    def calc_pow_window(cls, block_num=None):
+        last_pow_work = cls.get_latest_work(block_num=block_num)
+        if not last_pow_work:
+            return None, None
+
+        first_pow_work = cls.get_latest_work(block_num=block_num, order="start_time")
+
+        return first_pow_work.start_time, last_pow_work.expire_time
+
+    @classmethod
+    def calc_epoch_window(cls, block_num=None):
+        if block_num is None:
+            block_num = cls.get_latest_block_num()
+
+        if block_num == -1:
+            return None, None
+
+        first_pow_work = cls.get_latest_work(block_num=block_num, order="start_time")
+        if not first_pow_work:
+            return None, None
+
+        first_pow_work_next_epoch = cls.get_latest_work(block_num=block_num+1, order="start_time")
+
+        start_time = first_pow_work.start_time
+        end_time = datetime.utcnow()
+        if first_pow_work_next_epoch:
+            end_time = first_pow_work_next_epoch.start_time
+
+        return start_time, end_time
 
     @classmethod
     def calc_seconds_to_next_pow(cls):
@@ -100,14 +147,14 @@ class PowWork(ModelMixin, mg.Document):
         # 3. get last work in prev epoch
         cur_block = latest_work.block_num
         prev_block = cur_block - 1
-        prev_epoch_work = cls.objects(block_num=prev_block).order_by("-expire_time").first()
+        prev_epoch_work = cls.get_latest_work(block_num=prev_block)
         if not prev_epoch_work:
             return 0      # can find work in prev epoch
 
         epoch_time = latest_work.start_time - prev_epoch_work.expire_time
 
         # 4. get the first work in this epoch
-        first_work_this_epoch = cls.objects(block_num=cur_block).order_by("expire_time").first()
+        first_work_this_epoch = cls.get_latest_work(block_num=cur_block, order="expire_time")
         if first_work_this_epoch:
             epoch_time = first_work_this_epoch.start_time - prev_epoch_work.expire_time
 

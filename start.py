@@ -14,12 +14,12 @@ cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main(port=None):
+    if port is not None:
+        port = int(port)
     conf_file = os.path.join(cur_dir, "pool.conf")
-    poolserver.start_api_server(conf_file=conf_file, port=port)
+    poolserver.start_servers(conf_file=conf_file,
+                             port=port)
 
 
 if __name__ == "__main__":
-    _port = None
-    if len(sys.argv) > 1:
-        _port = int(sys.argv[1])
-    main(_port)
+    main(*sys.argv[1:2])

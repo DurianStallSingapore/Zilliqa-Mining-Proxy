@@ -45,14 +45,18 @@ class Miner(ModelMixin, mg.Document):
         return f"[Miner: {self.wallet_address}, {self.authorized}]"
 
     @classmethod
-    def get_or_create(cls, wallet_address: str, worker_name: str):
+    def get_or_create(cls, wallet_address: str, worker_name: str,
+                      nick_name="", email="", authorized=True):
         worker = Worker.get_or_create(wallet_address, worker_name)
         if worker:
             miner = cls.objects(
                 wallet_address=wallet_address
             ).modify(
                 upsert=True, new=True,
-                set__wallet_address=wallet_address
+                set__wallet_address=wallet_address,
+                set__authorized=authorized,
+                set__nick_name=nick_name,
+                set__email=email
             )
             if miner.join_date is None:
                 miner.update(join_date=datetime.utcnow())
@@ -143,7 +147,7 @@ class HashRate(ModelMixin, mg.Document):
     worker_name = mg.StringField(max_length=64, default="")
 
     hashrate = mg.IntField(default=0.0, required=True)
-    updated_time = mg.DateTimeField(default=datetime.utcnow)
+    updated_time = mg.DateTimeField()
 
     @classmethod
     def log(cls, hashrate: int, wallet_address: str, worker_name: str):
@@ -157,5 +161,52 @@ class HashRate(ModelMixin, mg.Document):
             return False
 
         hr = cls(wallet_address=wallet_address, worker_name=worker_name,
-                 hashrate=hashrate)
+                 hashrate=hashrate, updated_time=datetime.utcnow())
         return hr.save()
+
+    @classmethod
+    def epoch_hashrate(cls, block_num, wallet_address=None, worker_name=None):
+        from .pow import PowWork
+
+        epoch_start, epoch_end = PowWork.calc_epoch_window(block_num)
+        if not epoch_start or not epoch_end:
+            return -1
+
+        match = {
+            "updated_time": {
+                "$gte": epoch_start,
+                "$lte": epoch_end,
+            }
+        }
+
+        if wallet_address is not None:
+            match.update({
+                "wallet_address": {
+                    "$eq": wallet_address,
+                }
+            })
+
+        if worker_name is not None:
+            match.update({
+                "worker_name": {
+                    "$eq": worker_name,
+                }
+            })
+
+        group = {
+            "_id": {"wallet_address": "$wallet_address",
+                    "worker_name": "$worker_name", },
+            "hashrate": {"$max": "$hashrate"}
+        }
+        project = {
+            "hashrate": {"$sum": "$hashrate"}
+        }
+
+        pipeline = [
+            {"$match": match},
+            {"$group": group},
+            {"$project": project}
+        ]
+
+        res = list(cls.objects.aggregate(*pipeline))
+        return res[0]["hashrate"] if res else 0

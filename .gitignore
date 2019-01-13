@@ -62,3 +62,7 @@ target/
 .idea/
 .vscode/
 .DS_Store
+
+# logfiles
+zil_pool.log
+zil_pool.log.*

@@ -17,6 +17,7 @@
 import logging
 from logging import handlers
 
+import asyncio
 from json import dumps
 from functools import partial
 from aiohttp import web
@@ -70,30 +71,80 @@ def create_api_handler(config=None):
     return api_handle
 
 
-def start_api_server(conf_file=None, port=None):
-    from zilpool.common import utils
+def init_apis(app, config):
     from zilpool.apis import load_apis
-    from zilpool.database import init_db
+
+    load_apis(config)
+
+    if not config["api_server"].get("enabled"):
+        return
+
+    path = config["api_server"].get("path", "/api")
+
+    app.router.add_post(path, create_api_handler(config))
+
+
+def init_website(app, config):
+    from zilpool.web import init_web_handlers
+
+    if not config["api_server"]["website"].get("enabled"):
+        return
+
+    init_web_handlers(app, config)
+
+
+def update_config(site, config):
+    if config["api_server"].get("enabled"):
+        api_path = config["api_server"]["path"]
+        api_url = f"{site.name}{api_path}"
+
+        config["api_server"]["url"] = api_url
+        config["pool"]["api_endpoints"].append(api_url)
+        logging.critical(f"API Server running at: {api_url}")
+
+    website_config = config["api_server"]["website"]
+    if website_config.get("enabled"):
+        web_path = website_config["path"]
+        web_url = f"{site.name}{web_path}"
+        website_config["url"] = web_url
+        logging.critical(f"Website running at: {web_url}")
+
+
+def start_servers(conf_file=None, port=None):
+    from zilpool.common import utils, mail
+    from zilpool.database import init_db, connect_to_db
 
     # merge user's config with default.conf
     config = utils.merge_config(conf_file)
 
     # setup logfile
-    setup_logging(config.logging)
+    setup_logging(config["logging"])
 
-    # init database and apis
+    # init tools
+    mail.EmailClient.set_config(config)
+
+    # init database
+    connect_to_db(config)
     init_db(config)
-    load_apis(config)
 
     # init app
-    if port is None:
-        port = config.api_server.get("port", "4202")
-    api_path = config.api_server.get("path", "/api")
-    host = config.api_server.get("host", "0.0.0.0")
+    app = web.Application(debug=config["debug"])
+    init_apis(app, config)
+    init_website(app, config)
 
-    app = web.Application(debug=config.debug)
-    app.router.add_post(api_path, create_api_handler(config))
+    # start the server
+    if port is None:
+        port = config["api_server"].get("port", "4202")
+    host = config["api_server"].get("host", "0.0.0.0")
+
+    runner = web.AppRunner(app)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(runner.setup())
+    site = web.TCPSite(runner, host=host, port=port)
+    loop.run_until_complete(site.start())
+
+    # update config
+    update_config(site, config)
 
     # start ioloop
-    logging.critical(f"API endpoint: http://{host}:{port}{api_path}")
-    web.run_app(app, host=host, port=port)
+    loop.run_forever()

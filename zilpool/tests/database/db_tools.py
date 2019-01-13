@@ -25,7 +25,7 @@ import argparse
 
 from zilpool.common import utils
 from zilpool.pyzil import crypto, ethash
-from zilpool.database.basemodel import db, init_db, get_all_models, drop_all
+from zilpool.database.basemodel import db, connect_to_db, get_all_models, drop_all
 from zilpool.database import zilnode, miner, pow
 import zilpool.tests.database.db_debug_data as debug_data
 
@@ -72,7 +72,8 @@ def build_debug_db(params=None):
         pub_key, pow_fee, authorized = node_data
         if not pub_key.startswith("0x"):
             pub_key = "0x" + pub_key
-        node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
+        node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee,
+                               email="", authorized=authorized)
         res = node.save()
         print(f"create pub_key: {pub_key}")
         print(f"result: {res}")
@@ -221,7 +222,8 @@ def keypairs(params=None):
             pub_key, pow_fee, authorized = key.keypair_str.public, 0.0, True
             if not pub_key.startswith("0x"):
                 pub_key = "0x" + pub_key
-            node = zilnode.ZilNode(pub_key=pub_key, pow_fee=pow_fee, authorized=authorized)
+            node = zilnode.ZilNode(pub_key=pub_key, email="",
+                                   pow_fee=pow_fee, authorized=authorized)
             node = node.save()
             print(f"create node: {node}")
 
@@ -259,7 +261,7 @@ def main():
     print(f"config file: {args.conf}")
     config = utils.merge_config(args.conf)
     print(f"database: {config.database['uri']}")
-    init_db(config)
+    connect_to_db(config)
 
     if args.command == "drop":
         drop_col(args.params, force=False)

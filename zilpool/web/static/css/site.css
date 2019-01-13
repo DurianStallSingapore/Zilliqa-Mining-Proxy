@@ -1,0 +1,57 @@
+
+span.v-middle {
+  vertical-align: middle !important;
+}
+
+.navbar-brand {
+  color: #5BC0BE;
+}
+
+header.masthead {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+.miner_bg {
+  background: none;
+}
+.nodes_bg {
+  background: none;
+}
+
+.fixed-top {
+    position: relative;
+}
+
+@media (min-width: 768px) {
+  header.masthead {
+    padding-top: 2rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .fixed-top {
+    position: fixed;
+  }
+  header.masthead {
+    padding-top: 8rem;
+  }
+  .miner_bg {
+    background-image: url('../img/bg-miners.jpg');
+    background-repeat: no-repeat;
+    background-position: right;
+  }
+  .nodes_bg {
+    background-image: url('../img/bg-nodes.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+}
+
+@media (min-width: 1600px) {
+  .col-xxl-8 {
+      -ms-flex: 0 0 66.666667%;
+      flex: 0 0 66.666667%;
+      max-width: 66.666667%;
+  }
+}

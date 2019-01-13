@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>{{ config.pool.title }}</title>
+    <!-- Bootstrap core CSS -->
+    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom fonts for this template -->
+    <link href="/static/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="/static/vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template -->
+    <link href="/static/css/landing-page.min.css" rel="stylesheet">
+    <link href="/static/css/site.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar fixed-top">
+      <a class="navbar-brand zil_text" href="/">{{ config.pool.title }}</a>
+      <form class="form-inline flex-fill">
+        <div class="col-lg-1"></div>
+        <div class="col-lg-9 col-sm-9">
+          <input type="text" class="w-100 form-control form-control-sm" placeholder="miner address or node key">
+        </div>
+        <div class="col-lg-2 col-sm-2">
+          <a id="btn_search" class="btn btn-sm btn-secondary" href="javascript:void(0);">Search</a>
+        </div>
+      </form>
+      <div>
+        <a class="btn btn-warning" href="/#start_mining">Start Mining</a>
+        <a class="btn btn btn-dark m-1" href="/#register_node">Register ZIL Node</a>
+        <a class="btn btn btn-primary" href="https://github.com/deepgully/ethminer/releases">Download ZILMiner</a>
+      </div>
+    </nav>
+    {% block body %}
+        <header class="masthead pt-0 pt-lg-4"></header>
+    {% endblock %}
+    <!-- Footer -->
+    <footer class="footer bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
+            <p class="text-muted small mb-4 mb-lg-0">&copy; 2019 {{ config.pool.title }}. All Rights Reserved.</p>
+          </div>
+          <div class="col-lg-6 h-100 text-center text-lg-right my-auto">
+            <ul class="list-inline mb-0">
+              <li class="list-inline-item mr-3">
+                <a href="https://github.com/deepgully/ethminer">
+                  <i class="fab fa-github fa-2x fa-fw"></i>
+                </a>
+              </li>
+              <li class="list-inline-item mr-3">
+                <a href="https://twitter.com/zilliqa">
+                  <i class="fab fa-twitter-square fa-2x fa-fw"></i>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="/static/vendor/jquery/jquery.min.js"></script>
+    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/script/site.js"></script>
+    <script>
+      $(document).ready(function() {
+        $("#btn_search").click(function () {
+
+        });
+      });
+    </script>
+    {% block script %}{% endblock %}
+  </body>
+</html>
