@@ -1,0 +1,15 @@
+{% extends "base.jinja2" %}
+{% block body %}
+{{ super() }}
+<section class="text-white text-center">
+  <div class="container">
+    <div class="row mx-auto mt-5">
+      {% if not miner %}
+        <div class="col-12 alert alert-danger fixed-font">
+          Address not found: {{ address }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

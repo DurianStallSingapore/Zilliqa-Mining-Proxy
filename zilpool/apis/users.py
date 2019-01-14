@@ -96,7 +96,7 @@ def node_register(config, pub_key: str, email: str):
     for key in pub_keys:
         exist = zilnode.ZilNode.get_by_pub_key(key, authorized=None)
         if exist:
-            raise Exception("public key exists already")
+            raise Exception(f"public key exists already, {key}")
 
     for key in pub_keys:
         owner.register_node(key)

@@ -24,7 +24,8 @@
       <form class="form-inline flex-fill">
         <div class="col-lg-1"></div>
         <div class="col-lg-9 col-sm-9">
-          <input type="text" class="w-100 form-control form-control-sm fixed-font" placeholder="miner address or node key">
+          <input id="input_top_search" type="text" class="w-100 form-control form-control-sm fixed-font"
+                 placeholder="miner address or node key">
         </div>
         <div class="col-lg-2 col-sm-2">
           <a id="btn_search" class="btn btn-sm btn-secondary" href="javascript:void(0);">Search</a>
@@ -70,8 +71,43 @@
     <script src="/static/script/site.js"></script>
     <script>
       $(document).ready(function() {
-        $("#btn_search").click(function () {
 
+        function search() {
+          let $input = $("#input_top_search");
+          let search_str = $.trim($input.val());
+
+          $input.tooltip("dispose");
+
+          if (search_str.length == 0) {
+            $input.tooltip({
+                title: "please input miner address or node public key"
+            }).tooltip("show");
+            return;
+          }
+
+          // try address first
+          let valid_address = valid_hex_str(search_str, 42);
+          if (valid_address) {
+            window.location.href = "/miner/" + valid_address;
+          }
+          let valid_pub_key = valid_hex_str(search_str, 68);
+          if (valid_pub_key) {
+            window.location.href = "/node/" + valid_pub_key;
+          }
+          $input.tooltip({
+              title: "invalid address or public key"
+          }).tooltip("show");
+        }
+
+        $("#input_top_search").keydown(function(event){
+          if (event.which == 13) {
+            event.preventDefault();
+            search();
+          }
+        });
+
+        $("#btn_search").click(function () {
+          search();
         });
       });
     </script>

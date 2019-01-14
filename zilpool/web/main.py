@@ -64,4 +64,34 @@ def init_web_handlers(app, config):
         verify
     )
 
+    @aiohttp_jinja2.template("miner.jinja2")
+    async def show_miner(request):
+        address = request.match_info.get("address")
+        miner = stats.miner_stats(address)
+
+        return {
+            "config": config,
+            "address": address,
+            "miner": miner,
+        }
+
+    app.router.add_route(
+        "GET", f"{root_path}miner/{{address}}", show_miner
+    )
+
+    @aiohttp_jinja2.template("node.jinja2")
+    async def show_node(request):
+        pub_key = request.match_info.get("pub_key")
+        node = stats.node_stats(pub_key)
+
+        return {
+            "config": config,
+            "pub_key": pub_key,
+            "node": node,
+        }
+
+    app.router.add_route(
+        "GET", f"{root_path}node/{{pub_key}}", show_node
+    )
+
 
