@@ -124,8 +124,8 @@ class TestDatabase:
         key = ZilKey.generate_key_pair()
         pub_key = key.keypair_str.public
 
-        pending = owner.request_node(pub_key)
-        assert pub_key in pending
+        node = owner.register_node(pub_key)
+        assert pub_key in owner.pending_nodes
 
         node = ZilNode.get_by_pub_key(pub_key=pub_key, authorized=False)
         assert node is not None
@@ -133,41 +133,41 @@ class TestDatabase:
 
         assert node.pow_fee == owner.pow_fee
 
-        code = owner.create_verify_code(expire_secs=10)
-        assert code
-
-        # should pass the 1st check
-        verified_owner = ZilNodeOwner.check_verify_code(code)
-        assert verified_owner
-        assert verified_owner == owner
-
-        # should fail the 2nd check
-        verified_owner = ZilNodeOwner.check_verify_code(code)
-        assert not verified_owner
-
-        # short expire time
-        code = owner.create_verify_code(expire_secs=0.1)
-        assert code
-        time.sleep(1)
-
-        # should fail the 1st check because expired
-        verified_owner = ZilNodeOwner.check_verify_code(code)
-        assert not verified_owner
-
-        code = owner.create_verify_code(expire_secs=30)
-        assert code
-
-        # should fail the 1st check because wrong code
-        verified_owner = ZilNodeOwner.check_verify_code(code.upper())
-        assert not verified_owner
-        verified_owner = ZilNodeOwner.check_verify_code(code.lower())
-        assert not verified_owner
-        verified_owner = ZilNodeOwner.check_verify_code(code)
-        assert verified_owner
-
     def test_admin(self):
-        config = get_database_debug_config()
+        import time
+        from zilpool.database.zilnode import ZilNodeOwner
+        from zilpool.database.ziladmin import ZilAdminToken
 
+        config = get_database_debug_config()
         drop_all()
         init_db(config)
 
+        action = "verify_owner_email"
+        email = "test@test.com"
+
+        ZilNodeOwner.create(email=email)
+
+        token = ZilAdminToken.create_token(action, ext_data={"email": email})
+        assert token
+        admin_token = ZilAdminToken.verify_token(token, action)
+        assert admin_token
+        assert admin_token.ext_data["email"] == email
+
+        owner = ZilNodeOwner.get_one(email=email)
+        assert owner
+
+        assert not owner.email_verified
+        admin_token.do_action()
+        owner.reload()
+        assert owner.email_verified
+
+        token = ZilAdminToken.create_token(action, ext_data=None, expire_secs=0.1)
+        token2 = ZilAdminToken.create_token(action, ext_data=None, expire_secs=1.5)
+        assert token
+        assert token2
+        assert token != token2
+        time.sleep(1)
+        admin_token = ZilAdminToken.verify_token(token, action)
+        admin_token2 = ZilAdminToken.verify_token(token2, action)
+        assert admin_token is None
+        assert admin_token2 is not None

@@ -118,7 +118,7 @@
           <form class="mt-3">
             <div class="form-group col-lg-12">
               <label>Public Keys(one line per node):</label>
-              <textarea id="node_pub_keys" class="form-control" rows="3"></textarea>
+              <textarea id="node_pub_keys" class="form-control fixed-font" rows="3"></textarea>
             </div>
             <div class="form-group col-lg-6">
               <input id="node_email" type="email" class="form-control" placeholder="your email">
@@ -154,7 +154,7 @@
   function update_pow_time(str_pow_time) {
     const pow_time = dayjs(str_pow_time);
     const mins = pow_time.diff(dayjs(), "minute");
-    let pow_msg = "PoW is running";
+    var pow_msg = "PoW is running";
     if (mins > 0) {
         pow_msg = mins.toString() + " mins later";
     }
@@ -216,24 +216,6 @@
     return valid_keys;
   }
 
-  function register_node(pub_key, email) {
-    jsonrpc(
-      "/api",
-      "register_node",
-      [pub_key, email],
-      function (result) {
-        if (!result) {
-          append_msg("#node_msg", "register failed " + pub_key, "danger");
-        } else {
-          append_msg("#node_msg", "register success " + pub_key, "success");
-        }
-      },
-      function (error) {
-        append_msg("#node_msg", error + " " + pub_key, "danger");
-      }
-    );
-  }
-
   function register_nodes() {
     error_msg("#node_msg", "");
     $(".node-msg").hide();
@@ -254,9 +236,24 @@
     }
 
     error_msg("#node_msg", "register " + node_keys.length + " nodes ", "warning");
-    for (let i=0; i < node_keys.length; i++) {
-      register_node(node_keys[i], email);
-    }
+
+    let pub_keys = node_keys.join(",")
+
+    jsonrpc(
+      "/api",
+      "register_node",
+      [pub_keys, email],
+      function (result) {
+        if (!result) {
+          append_msg("#node_msg", "register failed", "danger");
+        } else {
+          append_msg("#node_msg", "register success", "success");
+        }
+      },
+      function (error) {
+        append_msg("#node_msg", error, "danger");
+      }
+    );
   }
 
   $(document).ready(function() {

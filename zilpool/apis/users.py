@@ -24,7 +24,7 @@ from zilpool.web import tools
 def init_apis(config):
     @method
     async def register_miner(wallet_address: str, email: str, nick_name=""):
-        new_miner = miner_register(wallet_address, email, nick_name)
+        new_miner = miner_register(config, wallet_address, email, nick_name)
         if not new_miner:
             return False
         resp = new_miner.to_mongo()
@@ -34,13 +34,13 @@ def init_apis(config):
 
     @method
     async def register_node(pub_key: str, email: str):
-        owner = node_register(config, pub_key, email)
+        result = node_register(config, pub_key, email)
         return {
-            "pending": owner.pending_nodes
+            "result": result
         }
 
 
-def miner_register(wallet_address, email, nick_name=""):
+def miner_register(config, wallet_address, email, nick_name=""):
     wallet_address = utils.valid_addr(wallet_address)
     assert wallet_address, "invalid wallet address"
 
@@ -52,16 +52,32 @@ def miner_register(wallet_address, email, nick_name=""):
 
     new_miner = miner.Miner.get_or_create(
         wallet_address, "default_worker",
-        nick_name=nick_name, email=email
+        nick_name=nick_name, email=email,
     )
+    if not new_miner.email_verified:
+        ext_data = {
+            "miner_address": new_miner.wallet_address,
+        }
+        # send verification mail to user
+        tools.send_email_verification(config, email, "miner", ext_data=ext_data)
+
     return new_miner
 
 
 def node_register(config, pub_key: str, email: str):
     email = utils.valid_email(email)
     assert email, "invalid email"
-    pub_key = utils.valid_pub_key(pub_key)
-    assert pub_key, "invalid public key"
+
+    pub_keys = [key for key in pub_key.split(",")]
+    for i in range(len(pub_keys)):
+        key = pub_keys[i]
+        valid_key = utils.valid_pub_key(key)
+        if not valid_key:
+            raise Exception(f"invalid public key {key}")
+        pub_keys[i] = valid_key
+
+    if not pub_keys:
+        raise Exception("no public key")
 
     # 1. get or create node owner
     owner = zilnode.ZilNodeOwner.get_one(email=email)
@@ -74,17 +90,18 @@ def node_register(config, pub_key: str, email: str):
 
     if not owner.email_verified:
         # 1.1 send verification mail to user
-        tools.send_email_verification(config, email, "node")
+        tools.send_email_verification(config, email, "owner")
 
-    # 2. register public key
-    exist = zilnode.ZilNode.get_by_pub_key(pub_key, authorized=None)
-    if exist:
-        raise Exception("public key exists already")
+    # 2. register public keys
+    for key in pub_keys:
+        exist = zilnode.ZilNode.get_by_pub_key(key, authorized=None)
+        if exist:
+            raise Exception("public key exists already")
 
-    owner.request_node(pub_key)
+    for key in pub_keys:
+        owner.register_node(key)
 
     # 3. send auth required mail to admin
-    if len(owner.pending_nodes) > 0:
-        tools.send_approve_require_email(config, email, pub_key)
+    tools.send_approve_require_email(config, email, pub_keys)
 
-    return owner
+    return True

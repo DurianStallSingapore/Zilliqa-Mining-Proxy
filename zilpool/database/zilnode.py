@@ -21,8 +21,6 @@ import mongoengine as mg
 
 from .basemodel import ModelMixin
 
-from zilpool.common.utils import encrypt_password
-
 
 class ZilNodeOwner(ModelMixin, mg.Document):
     meta = {"collection": "zil_nodes_owner"}
@@ -30,8 +28,6 @@ class ZilNodeOwner(ModelMixin, mg.Document):
     email = mg.StringField(max_length=128, required=True, unique=True)
     password_hash = mg.StringField(max_length=128)
     email_verified = mg.BooleanField(default=False)
-    verify_code = mg.StringField(max_length=128)
-    verify_expire_time = mg.DateTimeField()
     join_date = mg.DateTimeField()
 
     pow_fee = mg.FloatField(default=0.0)
@@ -46,57 +42,26 @@ class ZilNodeOwner(ModelMixin, mg.Document):
                    join_date=datetime.utcnow(),
                    pending_nodes=[]).save()
 
-    def request_node(self, pub_key):
+    def register_node(self, pub_key):
         node = ZilNode.get_by_pub_key(pub_key, authorized=None)
         if not node:
             node = ZilNode(pub_key=pub_key, authorized=False,
                            email=self.email, pow_fee=self.pow_fee)
             node.save()
-        if node.authorized:
-            return None
+        if node and node.authorized:
+            return node
 
         if pub_key not in self.pending_nodes:
             self.pending_nodes.append(pub_key)
             self.save()
 
-        return self.pending_nodes
+        return node
 
     def node_approved(self, pub_key):
         if pub_key in self.pending_nodes:
             self.pending_nodes.remove(pub_key)
         self.save()
         return self.pending_nodes
-
-    def create_verify_code(self, expire_secs=24*3600):
-        expired_at = datetime.utcnow() + timedelta(seconds=expire_secs)
-        if not self.update(verify_expire_time=expired_at):
-            return None
-
-        msg = self.email + self.verify_expire_time.isoformat()
-        code = encrypt_password(msg, sep="")[:12]
-
-        if not self.update(verify_code=code):
-            return None
-        return code
-
-    @classmethod
-    def check_verify_code(cls, code):
-        owner = cls.get_one(verify_code=code)
-        if not owner:
-            return None
-
-        if not owner.verify_expire_time:
-            return None
-        if datetime.utcnow() > owner.verify_expire_time:
-            return None
-
-        msg = owner.email + owner.verify_expire_time.isoformat()
-        calc_code = encrypt_password(msg, salt=code[:8], sep="")[:12]
-        if code != calc_code:
-            logging.warning(f"code verify failed, {msg}")
-            return None
-
-        return owner.update(verify_code="", verify_expire_time=None)
 
 
 class ZilNode(ModelMixin, mg.Document):

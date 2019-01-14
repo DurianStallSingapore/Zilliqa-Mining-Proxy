@@ -22,10 +22,12 @@ from .utils import run_in_thread
 
 
 class EmailClient:
+    admin_email = ""
     smtp_config = None
 
     @classmethod
     def set_config(cls, config):
+        cls.admin_email = config["pool"]["admin"]
         cls.smtp_config = config["smtp"]
 
     @classmethod
@@ -73,3 +75,7 @@ class EmailClient:
             client.quit()
         finally:
             client.close()
+
+    @classmethod
+    def send_admin_mail(cls, to_addrs, subject: str, msg: str, **kwargs):
+        return cls.send_mail(cls.admin_email, to_addrs, subject, msg, **kwargs)

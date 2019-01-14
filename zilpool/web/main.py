@@ -47,47 +47,21 @@ def init_web_handlers(app, config):
 
     @aiohttp_jinja2.template("verify.jinja2")
     async def verify(request):
-        rule = request.match_info.get("rule")
         action = request.match_info.get("action")
-        code = request.match_info.get("code")
+        token = request.match_info.get("token")
 
-        verified = tools.verify_code(rule, action, code)
+        verified, message = tools.verify_token(token, action)
 
         return {
             "config": config,
             "verified": verified,
+            "message": message,
         }
 
     app.router.add_route(
         "GET",
-        f"{root_path}verify/{{rule:node|miner|admin}}"
-        f"/{{action:email}}/{{code}}",
+        f"{root_path}verify/{{action}}/{{token}}",
         verify
     )
 
-    @aiohttp_jinja2.template("pending.jinja2")
-    async def pending(request):
-        token = request.query.get("token")
-        pub_key = request.query.get("pub_key")
-        action = request.query.get("action")
-
-        resp = {
-            "config": config,
-            "pub_key": pub_key,
-            "approved": False,
-        }
-        try:
-            approve = action == "approve"
-            res = tools.approve_node_register(token, pub_key, approve)
-            resp["approved"] = res
-        except Exception as e:
-            resp["error"] = str(e)
-
-        return resp
-
-    app.router.add_route(
-        "GET",
-        f"{root_path}admin/pending",
-        pending
-    )
 

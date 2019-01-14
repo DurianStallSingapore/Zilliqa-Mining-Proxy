@@ -39,6 +39,7 @@ class Miner(ModelMixin, mg.Document):
 
     nick_name = mg.StringField(max_length=64, default="")
     email = mg.StringField(max_length=128)
+    email_verified = mg.BooleanField(default=False)
     join_date = mg.DateTimeField()
 
     def __str__(self):

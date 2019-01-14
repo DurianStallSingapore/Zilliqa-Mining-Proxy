@@ -9,6 +9,11 @@
       {% else %}
       <div class="col-12 alert alert-danger">verify failed or expired</div>
       {% endif %}
+      <div class="col-12 alert alert-info fixed-font">
+      {% for line in message.splitlines() %}
+        {{line}}<br>
+      {% endfor %}
+      </div>
     </div>
   </div>
 </section>

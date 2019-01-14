@@ -1,4 +1,9 @@
 
+.fixed-font {
+  font-family: monospace !important;
+  font-size: 1.2rem;
+}
+
 span.v-middle {
   vertical-align: middle !important;
 }

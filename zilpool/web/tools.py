@@ -19,45 +19,43 @@ from zilpool.database import ziladmin, zilnode
 from zilpool.common.mail import EmailClient
 
 
-def send_email_verification(config, user_email, rule):
-    owner = zilnode.ZilNodeOwner.get_one(email=user_email)
-    if not owner:
-        logging.warning(f"{user_email} not exists")
+def verify_url_for(config, action, token):
+    """ generate token verify link, must be synced with web handlers """
+    site_url = config["api_server"]["website"]["url"]
+
+    return f"{site_url}verify/{action}/{token}"
+
+
+def send_email_verification(config, user_email, rule, ext_data=None):
+    subject = "Verify your email address"
+    site_title = config["pool"]["title"]
+
+    action = f"verify_{rule}_email"
+    expire_secs = 24 * 3600
+    if ext_data is None:
+        ext_data = {}
+    ext_data.update({
+        "email": user_email
+    })
+
+    token = ziladmin.ZilAdminToken.create_token(action, ext_data=ext_data, expire_secs=expire_secs)
+    if not token:
+        logging.warning(f"failed to create {action} token")
         return False
 
-    subject = "Verify your email address"
-    admin = config["pool"]["admin"]
-    site_title = config["pool"]["title"]
-    site_url = config["api_server"]["website"]["url"]
-    code = owner.create_verify_code(expire_secs=48*3600)
-
-    email_verify_link = f"{site_url}verify/{rule}/email/{code}"
+    email_verify_link = verify_url_for(config, action, token)
 
     body = f"Thanks for joining {site_title}, " \
            f"please verify your email address {user_email}" \
            f" by clicking\n{email_verify_link}"
 
-    EmailClient.send_mail(sender=admin, to_addrs=user_email, subject=subject, msg=body)
+    EmailClient.send_admin_mail(to_addrs=user_email, subject=subject, msg=body)
     return True
 
 
-def verify_code(rule, action, code):
-    if rule == "node":
-        obj = zilnode.ZilNodeOwner.check_verify_code(code)
-    else:
-        raise NotImplementedError
-
-    if not obj:
-        return False
-
-    if action == "email":
-        return obj.update(email_verified=True)
-    else:
-        raise NotImplementedError
-
-
-def send_approve_require_email(config, user_email, pub_key):
-    if not pub_key:
+def send_approve_require_email(config, user_email, pub_keys):
+    if not pub_keys:
+        logging.warning(f"no public key to approve")
         return False
 
     owner = zilnode.ZilNodeOwner.get_one(email=user_email)
@@ -68,46 +66,58 @@ def send_approve_require_email(config, user_email, pub_key):
     subject = "Node Register Request"
     admin_email = config["pool"]["admin"]
     site_title = config["pool"]["title"]
-    site_url = config["api_server"]["website"]["url"]
+
+    approve_action = "approve_nodes"
+    reject_action = "reject_nodes"
+    expire_secs = 48 * 3600
+    ext_data = {
+        "email": user_email,
+        "pub_keys": pub_keys,
+    }
 
     # create temp token for admin
-    token = ziladmin.ZilAdminToken.create_token(admin_email, "node_register",
-                                                ext_data=pub_key)
-    if not token:
-        logging.warning("failed to create admin token")
+    approve_token = ziladmin.ZilAdminToken.create_token(
+        approve_action, ext_data=ext_data, expire_secs=expire_secs
+    )
+    if not approve_token:
+        logging.warning(f"failed to create {approve_action} token")
         return False
+    approve_link = verify_url_for(config, approve_action, approve_token)
 
-    admin_pending_link = f"{site_url}admin/pending?token={token}&pub_key={pub_key}"
+    reject_token = ziladmin.ZilAdminToken.create_token(
+        reject_action, ext_data=ext_data, expire_secs=expire_secs
+    )
+    if not approve_token:
+        logging.warning(f"failed to create {reject_action} token")
+        return False
+    reject_link = verify_url_for(config, reject_action, reject_token)
 
-    body = f"A node has requests to join {site_title} from {user_email}," \
-           f" the public key is {pub_key}. " \
-           f" \nApprove by clicking\n{admin_pending_link}&action=approve" \
-           f" \nReject by clicking\n{admin_pending_link}&action=reject"
+    body = f"{user_email} requests {len(pub_keys)} " \
+           f"Nodes to join {site_title}." \
+           f"\n\nApprove by clicking\n{approve_link}" \
+           f"\n\nReject by clicking\n{reject_link}" \
+           f"\n\nNodes Public Keys:\n"
 
-    EmailClient.send_mail(sender=admin_email, to_addrs=admin_email,
-                          subject=subject, msg=body)
+    body += "\n".join(pub_keys)
+
+    EmailClient.send_admin_mail(to_addrs=admin_email,
+                                subject=subject, msg=body)
     return True
 
 
-def approve_node_register(token, pub_key, approve=False):
-    admin_token = ziladmin.ZilAdminToken.check_token(token, "node_register")
+def send_auth_notification_email(user_email, messages):
+    subject = "Zilliqa Nodes Register Notification"
+    EmailClient.send_admin_mail(
+        to_addrs=user_email, subject=subject, msg=messages
+    )
+
+
+def verify_token(token, action):
+    admin_token = ziladmin.ZilAdminToken.verify_token(token, action)
     if not admin_token:
-        raise Exception("unauthorized or expired admin token")
+        return False, "invalid or expired token"
 
-    if pub_key != admin_token.ext_data:
-        raise Exception("public key mismatch")
-
-    node = zilnode.ZilNode.get_by_pub_key(pub_key, authorized=None)
-    if not node:
-        raise Exception("node not found")
-
-    if not node.update(authorized=approve):
-        raise Exception("failed to update node")
-
-    owner = zilnode.ZilNodeOwner.get_one(email=node.email)
-    if owner:
-        owner.node_approved(pub_key)
-
-    admin_token.delete()
-
-    return node.authorized
+    try:
+        return admin_token.do_action()
+    except Exception as e:
+        return False, str(e)
