@@ -19,19 +19,32 @@ start file
 """
 
 import os
-import sys
+import argparse
 from zilpool import poolserver
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def main(port=None):
-    if port is not None:
-        port = int(port)
-    conf_file = os.path.join(cur_dir, "pool.conf")
-    poolserver.start_servers(conf_file=conf_file,
-                             port=port)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run Zilliqa Mining Proxy",
+        usage="""python start.py --conf pool.conf --port 4202"""
+    )
+    parser.add_argument("-c", "--conf", help="conf file", default="")
+    parser.add_argument("-host", "--host", help="host to listen", default="")
+    parser.add_argument("-p", "--port", help="port to listen", type=int, default=0)
+    args = parser.parse_args()
+
+    if args.conf:
+        conf_file = args.conf
+    else:
+        conf_file = os.path.join(cur_dir, "pool.conf")
+
+    host = args.host if args.host else None
+    port = args.port if args.port else None
+
+    poolserver.start_servers(conf_file=conf_file, host=host, port=port)
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:2])
+    main()

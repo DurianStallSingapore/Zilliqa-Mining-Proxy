@@ -114,7 +114,7 @@ def update_config(site, config):
         logging.critical(f"Website running at: {web_url}")
 
 
-def start_servers(conf_file=None, port=None):
+def start_servers(conf_file=None, host=None, port=None):
     from zilpool.common import utils, mail
     from zilpool.database import init_db, connect_to_db
 
@@ -139,7 +139,8 @@ def start_servers(conf_file=None, port=None):
     # start the server
     if port is None:
         port = config["api_server"].get("port", "4202")
-    host = config["api_server"].get("host", "0.0.0.0")
+    if host is None:
+        host = config["api_server"].get("host", "0.0.0.0")
 
     runner = web.AppRunner(app)
     loop = asyncio.get_event_loop()
