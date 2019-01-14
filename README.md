@@ -1,13 +1,13 @@
 # Zilliqa Mining Proxy
 
-A pool proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
+A mining proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
 
 ## Installation & Usage
 
 1. Setup [Python3.6+](https://www.python.org/downloads/) and [MongoDB](https://docs.mongodb.com/manual/installation/)
 2. Clone zil from Github, setup Python requirements
     ```bash
-    git clone https://github.com/jiayaoqijia/Zilliqa-Mining-Proxy
+    git clone https://github.com/deepgully/Zilliqa-Mining-Proxy
     cd Zilliqa-Mining-Proxy
     sudo python setup.py develop 
     ```

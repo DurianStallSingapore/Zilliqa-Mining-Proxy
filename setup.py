@@ -1,9 +1,21 @@
 # -*- coding: utf-8 -*-
+# Zilliqa Mining Proxy
+# Copyright (C) 2019  Gully Chen
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-zilpool setup file
-
-Copyright 2018, Gully Chen.
-Licensed under Apache License, Version 2.0.
+setup file
 """
 
 from zilpool import version
@@ -23,17 +35,17 @@ install_requires = [
 setup(
     name="zilpool",
     version=version,
-    description="Zilliqa mining pool",
-    long_description="A pool proxy between Zilliqa node and GPU miners",
+    description="Zilliqa mining proxy",
+    long_description="A mining proxy between Zilliqa nodes and GPU miners",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python"
     ],
-    keywords="zil mining pool",
+    keywords="zil mining proxy pool",
     author="Gully Chen",
     author_email="deepgully@gmail.com",
     url="",
-    license="Apache Software License",
+    license="GNU General Public License",
     packages=packages,
     include_package_data=True,
     package_data=package_data,
