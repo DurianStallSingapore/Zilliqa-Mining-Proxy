@@ -74,9 +74,11 @@ class PowWork(ModelMixin, mg.Document):
         return works
 
     @classmethod
-    def find_work_by_header_boundary(cls, header: str, boundary: str,
+    def find_work_by_header_boundary(cls, header: str, boundary="",
                                      check_expired=True, order="expire_time"):
-        query = Q(header=header) & Q(boundary=boundary)
+        query = Q(header=header)
+        if boundary:
+            query = query & Q(boundary=boundary)
         if check_expired:
             query = query & Q(expire_time__gte=datetime.utcnow())
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one

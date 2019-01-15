@@ -29,6 +29,9 @@ from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
 
 
 def init_apis(config):
+    default_miner = config.mining.get(
+        "default_miner", "0x0123456789012345678901234567890123456789"
+    )
 
     def no_work():
         seconds_to_next_pow = pow.PowWork.calc_seconds_to_next_pow()
@@ -53,20 +56,22 @@ def init_apis(config):
     @method
     @utils.args_to_lower
     async def eth_submitWork(nonce: str, header: str, mix_digest: str,
-                             boundary: str, miner_wallet: str,
-                             worker_name: str="") -> bool:
+                             boundary: str="", miner_wallet: str="", worker_name: str="") -> bool:
         assert (len(nonce) == 18 and
                 len(header) == 66 and
                 len(mix_digest) == 66 and
-                len(boundary) == 66 and
-                len(miner_wallet) == 42 and
+                len(boundary) in [0, 66] and
+                len(miner_wallet) in [0, 42] and
                 len(worker_name) < 64)
+
+        if not miner_wallet:
+            miner_wallet = default_miner
 
         # 1. validate user input parameters
         nonce_int = h2i(nonce)
         worker_name = valid_worker_name(worker_name)
         miner_wallet_bytes = h2b(miner_wallet)
-        mix_digest_bytes, boundary_bytes = h2b(mix_digest), h2b(boundary)
+        mix_digest_bytes = h2b(mix_digest)
 
         # 2. get or create miner/worker
         _miner = miner.Miner.get_or_create(miner_wallet, worker_name)
@@ -86,6 +91,7 @@ def init_apis(config):
 
         # 4. verify result
         seed, header = h2b(work.seed), h2b(work.header)
+        boundary_bytes = h2b(work.boundary)
         block_num = ethash.seed_to_block_num(seed)
         hash_result = ethash.verify_pow_work(block_num, header, mix_digest_bytes,
                                              nonce_int, boundary_bytes)
@@ -96,13 +102,17 @@ def init_apis(config):
 
         # 5. check the result if lesser than old one
         if work.finished:
-            prev_result = pow.PowResult.get_pow_result(work.header, boundary)
-            if prev_result and ethash.is_less_or_equal(prev_result.hash_result, hash_result):
-                logging.warning(f"submitted result > old result, ignored. "
-                                f"{header} {boundary}: "
-                                f"{b2h(hash_result, prefix='0x')} > {prev_result.hash_result}")
-                _worker.update_stat(inc_failed=1)
-                return False
+            prev_result = pow.PowResult.get_pow_result(work.header, work.boundary)
+            if prev_result:
+                if prev_result.verified:
+                    logging.warning(f"submitted too late, work is verified. {work.header} {work.boundary}")
+                    _worker.update_stat(inc_failed=1)
+                    return False
+
+                if ethash.is_less_or_equal(prev_result.hash_result, hash_result):
+                    logging.warning(f"submitted result > old result, ignored. {work.header} {work.boundary}")
+                    _worker.update_stat(inc_failed=1)
+                    return False
 
         # 6. save to database
         hash_result_str = b2h(hash_result, prefix="0x")
@@ -131,6 +141,7 @@ def init_apis(config):
 
     def valid_worker_name(worker_name: str) -> str:
         worker_name = worker_name.strip()
+        if not worker_name:
+            worker_name = "default_worker"
         assert utils.is_valid_str(worker_name)
-        worker_name = worker_name if len(worker_name) > 0 else "default_worker"
         return worker_name
