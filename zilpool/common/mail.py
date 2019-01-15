@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import logging
 import smtplib
-import asyncio
 from ssl import SSLError
 from email.mime.text import MIMEText
-from .utils import run_in_thread
 
 
 class EmailClient:
-    admin_email = ""
+    admin_email_sender = ""
+    admin_email_to_addrs = []
     smtp_config = None
 
     @classmethod
     def set_config(cls, config):
-        cls.admin_email = config["pool"]["admin"]
+        cls.admin_email_to_addrs = config["pool"]["admins"]
+        cls.admin_email_sender = cls.admin_email_to_addrs[0]
         cls.smtp_config = config["smtp"]
 
     @classmethod
@@ -67,8 +67,8 @@ class EmailClient:
         msg["To"] = ",".join(to_addrs)
 
         if cls.smtp_config["debug"]:
-            print(f"fake smtp server:")
-            print(msg.as_string())
+            logging.info(f"Debug SMTP Server got a mail:")
+            logging.info(msg.as_string())
             return
 
         client = cls.create_client()
@@ -80,4 +80,4 @@ class EmailClient:
 
     @classmethod
     def send_admin_mail(cls, to_addrs, subject: str, msg: str, **kwargs):
-        return cls.send_mail(cls.admin_email, to_addrs, subject, msg, **kwargs)
+        return cls.send_mail(cls.admin_email_sender, to_addrs, subject, msg, **kwargs)

@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from urllib.parse import urljoin
 
 from zilpool.database import ziladmin, zilnode
 from zilpool.common.mail import EmailClient
@@ -25,7 +26,7 @@ def verify_url_for(config, action, token):
     """ generate token verify link, must be synced with web handlers """
     site_url = config["api_server"]["website"]["url"]
 
-    return f"{site_url}verify/{action}/{token}"
+    return urljoin(site_url, f"verify/{action}/{token}")
 
 
 def send_email_verification(config, user_email, rule, ext_data=None):
@@ -66,7 +67,7 @@ def send_approve_require_email(config, user_email, pub_keys):
         return False
 
     subject = "Node Register Request"
-    admin_email = config["pool"]["admin"]
+    admin_emails = config["pool"]["admins"]
     site_title = config["pool"]["title"]
 
     approve_action = "approve_nodes"
@@ -102,7 +103,7 @@ def send_approve_require_email(config, user_email, pub_keys):
 
     body += "\n".join(pub_keys)
 
-    EmailClient.send_admin_mail(to_addrs=admin_email,
+    EmailClient.send_admin_mail(to_addrs=admin_emails,
                                 subject=subject, msg=body)
     return True
 

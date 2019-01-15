@@ -103,17 +103,21 @@ def update_config(site, config):
     if config["api_server"].get("enabled"):
         api_path = config["api_server"]["path"]
         api_url = f"{site.name}{api_path}"
-
-        config["api_server"]["url"] = api_url
-        config["pool"]["api_endpoints"].append(api_url)
         logging.critical(f"API Server running at: {api_url}")
+
+        if not config["api_server"]["url"]:
+            # set auto generated api url
+            config["api_server"]["url"] = api_url
 
     website_config = config["api_server"]["website"]
     if website_config.get("enabled"):
         web_path = website_config["path"]
         web_url = f"{site.name}{web_path}"
-        website_config["url"] = web_url
         logging.critical(f"Website running at: {web_url}")
+
+        if not website_config["url"]:
+            # set auto generated website url
+            website_config["url"] = web_url
 
 
 def start_servers(conf_file=None, host=None, port=None):

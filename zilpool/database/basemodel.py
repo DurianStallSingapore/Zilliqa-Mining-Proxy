@@ -147,21 +147,23 @@ def init_admin(config):
     from zilpool.pyzil import crypto
     from zilpool.common.mail import EmailClient
 
-    email = config["pool"]["admin"]
-    admin = ziladmin.ZilAdmin.get_one(email=email)
+    EmailClient.set_config(config)
 
-    if not admin:
-        logging.critical("init admin database")
-        password = crypto.rand_string(8)
-        print(f"generate admin password: {password}")
-        admin = ziladmin.ZilAdmin.create(email, password)
+    admin_emails = config["pool"]["admins"]
+
+    for email in admin_emails:
+        admin = ziladmin.ZilAdmin.get_one(email=email)
+
         if not admin:
-            raise RuntimeError("Failed to create admin database")
+            logging.critical("init admin database")
+            password = crypto.rand_string(8)
+            print(f"generate admin password: {password}")
+            admin = ziladmin.ZilAdmin.create(email, password)
+            if not admin:
+                raise RuntimeError("Failed to create admin database")
 
-        EmailClient.set_config(config)
-        EmailClient.send_mail(
-            email, email,
-            subject="password generated",
-            msg=f"admin email: {email}\npassword: {password}"
-        )
-        return password
+            EmailClient.send_admin_mail(
+                email,
+                subject="password generated",
+                msg=f"admin email: {email}\npassword: {password}"
+            )

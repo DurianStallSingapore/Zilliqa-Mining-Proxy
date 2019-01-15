@@ -99,11 +99,11 @@
           <b>Step 4</b>: Run ZILMiner with following settings
           <a class="text-info" href="https://github.com/deepgully/ethminer/wiki">user manual</a>
           <div><code>
-            ./zilminer -P zil://[registered address].[worker name]@{{ config.pool.api_endpoints[0].replace("http://", "").replace("https://", "").strip() }}
+            ./zilminer -P zil://[registered address].[worker name]@{{ config.api_server.url.replace("http://", "").replace("https://", "").strip() }}
           </code></div>
           Example:
           <div><code>
-            ./zilminer -P zil://0x0123456789012345678901234567890123456789.zil_worker1@{{ config.pool.api_endpoints[0].replace("http://", "").replace("https://", "").strip() }}
+            ./zilminer -P zil://0x0123456789012345678901234567890123456789.zil_worker1@{{ config.api_server.url.replace("http://", "").replace("https://", "").strip() }}
           </code></div>
         </p>
         <h4>Done</h4>
@@ -139,7 +139,7 @@
             Set REMOTE_MINE to <code>true</code> in constants.xml
           </p>
           <p class="lead mb-0 pl-4"><b>2. </b>
-            Set MINING_PROXY_URL to <code>{{ config.pool.api_endpoints[0] }}</code> in constants.xml
+            Set MINING_PROXY_URL to <code>{{ config.api_server.url }}</code> in constants.xml
           </p>
           <p class="lead mb-0 pl-4"><b>3. </b>
             Start your ZIL Node
