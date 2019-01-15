@@ -47,8 +47,10 @@ def setup_logging(log_config):
     logging.getLogger().setLevel(level=level)
     logfile = log_config.get("file", "")
     if logfile:
+        backup_count = log_config.get("backup_count", 5)
+        rotating_size = log_config.get("rotating_size", 8)
         fh = handlers.RotatingFileHandler(
-            logfile, maxBytes=8 * 1024 * 1024, backupCount=5
+            logfile, maxBytes=rotating_size * 1024 * 1024, backupCount=backup_count
         )
         fh.setFormatter(FORMATTER)
         rootLogger.addHandler(fh)
