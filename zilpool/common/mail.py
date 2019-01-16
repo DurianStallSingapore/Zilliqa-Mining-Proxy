@@ -28,8 +28,11 @@ class EmailClient:
 
     @classmethod
     def set_config(cls, config):
-        cls.admin_email_to_addrs = config["pool"]["admins"]
-        cls.admin_email_sender = cls.admin_email_to_addrs[0]
+        title = config["pool"]["title"]
+        admin_emails = config["pool"]["admins"]
+
+        cls.admin_email_to_addrs = admin_emails
+        cls.admin_email_sender = f"{title} <{admin_emails[0]}>"
         cls.smtp_config = config["smtp"]
 
     @classmethod

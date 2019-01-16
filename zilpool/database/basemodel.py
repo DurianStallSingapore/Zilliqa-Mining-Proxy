@@ -157,10 +157,11 @@ def init_admin(config):
         if not admin:
             logging.critical("init admin database")
             password = crypto.rand_string(8)
-            print(f"generate admin password: {password}")
             admin = ziladmin.ZilAdmin.create(email, password)
             if not admin:
                 raise RuntimeError("Failed to create admin database")
+            print(f"generate admin password: {password}")
+            print(f"send mail to {email}")
 
             EmailClient.send_admin_mail(
                 email,
