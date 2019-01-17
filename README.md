@@ -1,6 +1,6 @@
 # Zilliqa Mining Proxy
 
-A mining proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners.
+A mining proxy between [Zilliqa](https://zilliqa.com/) nodes and GPU miners. This proxy should run on machine with public Ip so the Zilliqa nodes and GPU miners can connect to it.
 
 ## Installation & Usage
 
