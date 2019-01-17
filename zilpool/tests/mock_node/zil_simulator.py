@@ -36,6 +36,7 @@ from zilpool.pyzil import crypto, ethash
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 config_file = os.path.join(cur_dir, "nodes.conf")
 default_config = load_config(config_file)
+cur_block_file = os.path.join(cur_dir, "cur_block.tmp")
 
 
 class Node:
@@ -267,6 +268,9 @@ async def start_loop(loop, args, nodes):
 
             cur_block += 1
 
+            with open(cur_block_file, "w") as f:
+                f.write(f"{cur_block}")
+
 
 def run(args):
     print(f"Proxy Server: {args.proxy}")
@@ -303,6 +307,16 @@ def keygen(args):
 
 def main():
     args = build_args()
+    if args.block == -1:
+        # try to load from cur_block.tmp
+        try:
+            with open(cur_block_file) as f:
+                block = int(f.read()) + 10
+        except:
+            block = default_config["start_block"]
+
+        args.block = block
+
     commands[args.command](args)
 
 
@@ -338,8 +352,8 @@ zil_simulator <command> [<args>]
                         help=f"seconds of PoW window, default {default_config['pow_window']}")
     parser.add_argument("-e", "--epoch", default=default_config["epoch_time"], type=int,
                         help=f"seconds of a DS epoch, default {default_config['epoch_time']}")
-    parser.add_argument("-b", "--block", default=default_config["start_block"], type=int,
-                        help=f"block num to start, default {default_config['start_block']}")
+    parser.add_argument("-b", "--block", default=-1, type=int,
+                        help=f"block num to start, default load from cur_block.log")
     parser.add_argument("-d", "--diff", default=default_config["difficulty"], type=int,
                         help=f"shards difficulty, default {default_config['difficulty']}")
     parser.add_argument("-ds", "--ds_diff", default=default_config["ds_difficulty"], type=int,
