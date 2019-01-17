@@ -1,6 +1,6 @@
 # Zilliqa Mining Proxy
 
-A mining proxy between [Zilliqa](https://zilliqa.com/) CPU nodes and GPU mining rigs. This proxy is required to run on a machine with a public IP address, in order for the Zilliqa CPU nodes and GPU mining rigs to connect to it.
+A mining proxy between [Zilliqa](https://zilliqa.com/) CPU nodes and GPU mining rigs. This proxy only runs on a machine with a public IP address. The public IP address is required for both the Zilliqa CPU nodes and GPU mining rigs to connect to it.
 
 ## Installation & Usage
 
@@ -34,8 +34,7 @@ A mining proxy between [Zilliqa](https://zilliqa.com/) CPU nodes and GPU mining 
     * For Zilliqa CPU nodes, you have to edit the `constants.xml` file `MINING_PROXY_URL` parameter:
         ```yaml
         <MINING_PROXY_URL>http://52.220.146.17:4202/api</MINING_PROXY_URL>
-    * For the GPU mining rigs, you have to change the input `proxy_ip` to that of your public IP address.
-        ```
+    * For the GPU mining rigs, you have to change the input `proxy_ip` to that of your public IP address when setting up the Zilminer clients.
         
 5. Run Zilliqa proxy server
     ```bash
