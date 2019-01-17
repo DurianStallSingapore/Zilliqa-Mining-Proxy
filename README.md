@@ -4,7 +4,7 @@ A mining proxy between [Zilliqa](https://zilliqa.com/) CPU nodes and GPU mining 
 
 ## Installation & Usage
 
-1. Install [Python3.6+](https://www.python.org/downloads/) and [MongoDB](https://docs.mongodb.com/manual/installation/)
+1. Install [Python3.7.2+](https://www.python.org/downloads/) and [MongoDB](https://docs.mongodb.com/manual/installation/)
 
 2. Clone Zilliqa-Mining-Proxy, and setup the Python dependencies:
     ```bash
