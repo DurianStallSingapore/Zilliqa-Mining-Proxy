@@ -109,8 +109,8 @@ def current_work():
         "utc_time": utils.iso_format(now),
         "start_time": utils.iso_format(start_time),
         "next_pow_time": utils.iso_format(next_pow_time),
-        "avg_hashrate": miner.HashRate.epoch_hashrate(block_num - 1),
-        "avg_pow_fee": pow.PowWork.avg_pow_fee(block_num - 1),
+        "avg_hashrate": miner.HashRate.epoch_hashrate(block_num),
+        "avg_pow_fee": pow.PowWork.avg_pow_fee(block_num),
     }
 
 
@@ -120,6 +120,8 @@ def node_stats(pub_key: str):
     if node:
         working_q = Q(expire_time__gte=datetime.utcnow()) & Q(finished=False)
         return {
+            "pub_key": node.pub_key,
+            "pow_fee": node.pow_fee,
             "authorized": node.authorized,
             "works": {
                 "all": pow.PowWork.count(pub_key=pub_key),
@@ -137,11 +139,13 @@ def miner_stats(wallet_address: str):
                                       order="-finished_time")
         workers = [w.worker_name for w in m.workers]
         return {
+            "wallet_address": m.wallet_address,
             "authorized": m.authorized,
             "nick_name": m.nick_name,
             "rewards": m.rewards,
             "join_date": utils.iso_format(m.join_date),
             "last_finished_time": utils.iso_format(last_work and last_work.finished_time),
+            "hashrate": miner.HashRate.epoch_hashrate(wallet_address=m.wallet_address),
             "workers": workers,
             "works": m.works_stats(),
         }
@@ -158,6 +162,9 @@ def worker_stats(wallet_address: str, worker_name: str):
             "miner": wallet_address,
             "worker_name": worker.worker_name,
             "last_finished_time": utils.iso_format(last_work and last_work.finished_time),
+            "hashrate": miner.HashRate.epoch_hashrate(
+                wallet_address=wallet_address, worker_name=worker.worker_name
+            ),
             "works": worker.works_stats(),
         }
 

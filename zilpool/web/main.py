@@ -69,13 +69,19 @@ def init_web_handlers(app, config):
     @aiohttp_jinja2.template("miner.jinja2")
     async def show_miner(request):
         address = request.match_info.get("address")
-        miner = stats.miner_stats(address)
-
-        return {
+        address_worker = address.split(".", 2)    # address.worker_name
+        address = address_worker[0]
+        resp = {
             "config": config,
             "address": address,
-            "miner": miner,
+            "miner": stats.miner_stats(address),
         }
+
+        if len(address_worker) > 1:
+            worker = stats.worker_stats(address, address_worker[1])
+            resp["worker"] = worker
+
+        return resp
 
     app.router.add_route(
         "GET", f"{root_path}miner/{{address}}", show_miner

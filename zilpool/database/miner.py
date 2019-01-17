@@ -168,7 +168,7 @@ class HashRate(ModelMixin, mg.Document):
         return hr.save()
 
     @classmethod
-    def epoch_hashrate(cls, block_num, wallet_address=None, worker_name=None):
+    def epoch_hashrate(cls, block_num=None, wallet_address=None, worker_name=None):
         from .pow import PowWork
 
         epoch_start, epoch_end = PowWork.calc_epoch_window(block_num)

@@ -2,6 +2,7 @@
 .fixed-font {
   font-family: monospace !important;
   font-size: 1.2rem;
+  word-break: break-all;
 }
 
 span.v-middle {
@@ -49,7 +50,7 @@ header.masthead {
   .nodes_bg {
     background-image: url('../img/bg-nodes.jpg');
     background-repeat: no-repeat;
-    background-position: center;
+    background-position: left;
   }
 }
 

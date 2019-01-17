@@ -1,12 +1,49 @@
 {% extends "base.jinja2" %}
 {% block body %}
 {{ super() }}
-<section class="text-white text-center">
+<section class="text-center pt-5 pb-4">
   <div class="container">
-    <div class="row mx-auto mt-5">
+    <div class="row mx-auto">
       {% if not node %}
         <div class="col-12 alert alert-danger fixed-font">
-          Public Key not found: {{ pub_key }}
+          Node not found: {{ pub_key }}
+        </div>
+      {% else %}
+        <div class="col-lg-6 mx-auto">
+        <table class="table table-hover table-bordered">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">Node Public Key</th>
+              <th scope="col" class="fixed-font">{{ node.pub_key[:10] +  "......" + node.pub_key[-8:] }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Authorized?</th>
+              <td class="">{{ "Yes" if node.authorized else "No" }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoW Reward</th>
+              <td class="">{{ node.pow_fee }} ZILs/work</td>
+            </tr>
+            <tr>
+              <th scope="row">Working PoW</th>
+              <td class="">{{ node.works.working }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Total PoW</th>
+              <td class="">{{ node.works.all }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoW Finished</th>
+              <td class="">{{ node.works.finished }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoW Verified</th>
+              <td class="">{{ node.works.verified }}</td>
+            </tr>
+          </tbody>
+        </table>
         </div>
       {% endif %}
     </div>

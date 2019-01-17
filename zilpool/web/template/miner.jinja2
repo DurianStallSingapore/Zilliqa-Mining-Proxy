@@ -1,15 +1,122 @@
 {% extends "base.jinja2" %}
 {% block body %}
 {{ super() }}
-<section class="text-white text-center">
+<section class="text-center pt-5 pb-4">
   <div class="container">
-    <div class="row mx-auto mt-5">
+    <div class="row mx-auto">
       {% if not miner %}
         <div class="col-12 alert alert-danger fixed-font">
           Address not found: {{ address }}
+        </div>
+      {% elif worker %}
+        <div class="col-lg-8 mx-auto">
+        <table class="table table-hover table-bordered">
+          <thead class="bg-success text-white">
+            <tr>
+              <th scope="col">Woker Name</th>
+              <th scope="col ">{{ worker.worker_name }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Miner Wallet</th>
+              <td class="fixed-font">
+                <a href="/miner/{{ miner.wallet_address }}">{{ miner.wallet_address }}</a>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Last Work at</th>
+              <td class="utc_time">{{ worker.last_finished_time }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Hashrate</th>
+              <td class="hashrate">{{ worker.hashrate }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoWs Accepted</th>
+              <td class="">{{ worker.works.work_finished }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoWs Submitted</th>
+              <td class="">{{ worker.works.work_submitted }}</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+      {% else %}
+        <div class="col-lg-8 mx-auto">
+        <table class="table table-hover table-bordered">
+          <thead class="bg-warning text-white">
+            <tr>
+              <th scope="col">Miner Wallet</th>
+              <th scope="col" class="fixed-font">
+                {{ miner.wallet_address }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Authorized?</th>
+              <td class="">{{ "Yes" if miner.authorized else "No" }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Total Rewards</th>
+              <td class="">{{ miner.rewards }} ZILs</td>
+            </tr>
+            <tr>
+              <th scope="row">Last Work at</th>
+              <td class="utc_time">{{ miner.last_finished_time }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Hashrate</th>
+              <td class="hashrate">{{ miner.hashrate }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoWs Accepted</th>
+              <td class="">{{ miner.works.work_finished }}</td>
+            </tr>
+            <tr>
+              <th scope="row">PoWs Submitted</th>
+              <td class="">{{ miner.works.work_submitted }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Workers</th>
+              <td class="">
+                <a href="/miner/{{ miner.wallet_address }}.{{ miner.workers[0] }}">{{ miner.workers[0] }}</a>
+              </td>
+            </tr>
+            {% for worker in miner.workers[1:] %}
+            <tr>
+              <th scope="row"></th>
+              <td class="">
+                <a href="/miner/{{ miner.wallet_address }}.{{ worker }}">{{ worker }}</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
         </div>
       {% endif %}
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block script %}
+<script src="https://unpkg.com/dayjs@1.7.8/dayjs.min.js"></script>
+<script src="https://unpkg.com/dayjs@1.7.8/plugin/relativeTime.js"></script>
+<script>
+dayjs.extend(dayjs_plugin_relativeTime);
+$(document).ready(function() {
+  let $utc = $(".utc_time");
+  $utc.each(function () {
+    $(this).text(dayjs().from(dayjs($(this).text())));
+  });
+
+  $(".hashrate").each(function () {
+    let hashrate = $(this).text();
+    $(this).text(covert_hashrate(hashrate, 1));
+  });
+});
+</script>
 {% endblock %}

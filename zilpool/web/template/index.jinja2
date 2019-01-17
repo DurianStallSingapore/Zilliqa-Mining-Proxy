@@ -46,7 +46,7 @@
                 </tr>
                 <tr>
                   <th scope="row">Hashrate</th>
-                  <td>{{ "%.1f"|format((current.avg_hashrate/1000000)|float) }} Mh/s</td>
+                  <td class="hashrate">{{ current.avg_hashrate }}</td>
                 </tr>
                 <tr>
                   <th scope="row">Average Reward</th>
@@ -87,7 +87,7 @@
             </div>
           </div>
           <a id="btn_register_miner" class="btn btn-warning mb-2" href="javascript:void(0);">Register Miner</a>
-          <div id="miner_msg" class="col-lg-6 alert" style="display:none;"></div>
+          <div id="miner_msg" class="col-lg-6 alert fixed-font" style="display:none;"></div>
         </form>
         <p class="lead mb-0">
           <b>Step 3</b>: Download and extract
@@ -111,8 +111,8 @@
     </div>
     <!-- Register ZIL Node -->
     <div id="register_node" class="row no-gutters">
-      <div class="col-12 col-xxl-8 mx-auto row p-5">
-        <div class="col-lg-4 nodes_bg"></div>
+      <div class="col-12 col-xxl-8 mx-auto row p-5 nodes_bg">
+        <div class="col-lg-4"></div>
         <div class="col-lg-8">
           <h3>I am a Node Owner</h3>
           <p class="lead mb-0">
@@ -128,7 +128,7 @@
                onkeypress="return event.keyCode != 13;">
             </div>
             <a id="btn_register_nodes" class="btn btn-dark mb-2" href="javascript:void(0);">Register Node(s)</a>
-            <div id="node_msg" class="node-msg col-lg-12 alert alert-danger" style="display:none;"></div>
+            <div id="node_msg" class="node-msg col-lg-12 alert alert-danger fixed-font" style="display:none;"></div>
           </form>
           <p class="lead mb-0"><b>Step 2</b>: Waiting for Authorization email from pool
           </p>
@@ -266,6 +266,11 @@
     $("#btn_register_miner").click(register_miner);
 
     $("#btn_register_nodes").click(register_nodes);
+
+    $(".hashrate").each(function () {
+      let hashrate = $(this).text();
+      $(this).text(covert_hashrate(hashrate, 1));
+    });
   });
 </script>
 {% endblock %}

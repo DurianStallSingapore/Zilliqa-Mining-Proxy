@@ -83,3 +83,15 @@ function append_msg(elem, msg, style) {
 
   $elem.after($new_elem);
 }
+
+function covert_hashrate(hashrte, decimals){
+  if (0==hashrte) return "0 Mh/s";
+  if (-1==hashrte) return "0 Mh/s";
+
+  let k = 1000;
+  let dm = decimals <= 0 ? 0 : decimals || 2;
+  let rates = ['h/s', 'Kh/s', 'Mh/s', 'Gh/s', 'Th/s', 'Ph/s', 'Eh/s', 'Zh/s'];
+  let i = Math.floor(Math.log(hashrte) / Math.log(k));
+
+  return parseFloat((hashrte / Math.pow(k, i)).toFixed(dm)) + ' ' + rates[i];
+}
