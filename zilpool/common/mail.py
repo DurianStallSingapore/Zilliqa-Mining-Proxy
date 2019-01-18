@@ -50,7 +50,7 @@ class EmailClient:
         except SSLError:
             client = smtplib.SMTP(**client_kwargs)
 
-        if cls.smtp_config["tls"]:
+        if cls.smtp_config["starttls"]:
             client.starttls()
             client.ehlo()
 
