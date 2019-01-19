@@ -30,7 +30,8 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def zil_requestWork(pub_key: str, header: str,
+    async def zil_requestWork(request,
+                              pub_key: str, header: str,
                               block_num: str, boundary: str,
                               timeout: str, signature: str) -> bool:
         assert (len(pub_key) == 68 and      # 33 bytes -> "0x" + 66 chars
@@ -65,7 +66,8 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def zil_checkWorkStatus(pub_key: str, header: str,
+    async def zil_checkWorkStatus(request,
+                                  pub_key: str, header: str,
                                   boundary: str, signature: str) -> [list, tuple]:
         assert (len(pub_key) == 68 and
                 len(header) == 66 and
@@ -89,7 +91,8 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def zil_verifyResult(pub_key: str, verified: str,
+    async def zil_verifyResult(request,
+                               pub_key: str, verified: str,
                                header: str, boundary: str, signature: str) -> bool:
         assert (len(pub_key) == 68 and
                 len(verified) == 4 and

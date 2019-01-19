@@ -60,8 +60,9 @@ def create_api_handler(config=None):
     compat_dumps = partial(dumps, separators=(",", ":"))
 
     async def api_handle(request: web.Request) -> web.Response:
-        request = await request.text()
-        response = await async_dispatch(request,
+        request_text = await request.text()
+        response = await async_dispatch(request_text,
+                                        context=request,
                                         debug=config.debug,
                                         basic_logging=False,
                                         trim_log_values=True)

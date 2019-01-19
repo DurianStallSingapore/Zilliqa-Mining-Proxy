@@ -25,7 +25,7 @@ from zilpool.web import tools
 
 def init_apis(config):
     @method
-    async def register_miner(wallet_address: str, email: str, nick_name=""):
+    async def register_miner(request, wallet_address: str, email: str, nick_name=""):
         new_miner = miner_register(config, wallet_address, email, nick_name)
         if not new_miner:
             return False
@@ -35,7 +35,7 @@ def init_apis(config):
         return resp
 
     @method
-    async def register_node(pub_key: str, email: str):
+    async def register_node(request, pub_key: str, email: str):
         result = node_register(config, pub_key, email)
         return {
             "result": result

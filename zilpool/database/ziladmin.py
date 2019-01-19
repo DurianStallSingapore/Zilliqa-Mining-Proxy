@@ -173,6 +173,8 @@ class ZilAdminToken(ModelMixin, mg.Document):
 
 
 class ZilAdmin(ModelMixin, mg.Document):
+    VISA_LENGTH = 16
+
     meta = {"collection": "zil_admin"}
     email = mg.StringField(max_length=128, required=True, unique=True)
     password_hash = mg.StringField(max_length=128, required=True)
@@ -186,23 +188,31 @@ class ZilAdmin(ModelMixin, mg.Document):
         return admin.save()
 
     @classmethod
-    def login(cls, email, password, expire_secs=30*60):
+    def login(cls, email, password, expire_secs=30*60, ext_data=""):
         admin = cls.get_one(email=email)
         if not admin:
             return None
         if not verify_password(password, admin.password_hash):
             return None
-        return admin.create_visa(expire_secs=expire_secs)
+        return admin.create_visa(expire_secs=expire_secs, ext_data=ext_data)
 
     @classmethod
-    def logout(cls, email):
+    def logout_email(cls, email):
         admin = cls.get_one(email=email)
         if not admin:
             return None
-        return admin.update(visa="")
+        return admin.logout()
 
     @classmethod
-    def check_visa(cls, visa, email=None):
+    def logout_visa(cls, visa):
+        admin = cls.get_one(visa=visa)
+        if not admin:
+            return None
+        return admin.logout()
+
+    @classmethod
+    def check_visa(cls, visa, email=None, ext_data=""):
+        visa += ext_data
         if email is None:
             admin = cls.get_one(visa=visa)
         else:
@@ -214,8 +224,15 @@ class ZilAdmin(ModelMixin, mg.Document):
             return None
         return admin
 
-    def create_visa(self, expire_secs=30*60):
-        visa = crypto.rand_string(8)
+    @property
+    def visa_without_ext_data(self):
+        return self.visa[:self.VISA_LENGTH]
+
+    def logout(self):
+        return self.update(visa="")
+
+    def create_visa(self, expire_secs=30*60, ext_data=""):
+        visa = crypto.rand_string(self.VISA_LENGTH) + ext_data
         visa_expire_time = datetime.utcnow() + timedelta(seconds=expire_secs)
         if not self.update(visa=visa, visa_expire_time=visa_expire_time):
             return None
@@ -255,6 +272,12 @@ class SiteSettings(ModelMixin, mg.Document):
         if latest is None:
             latest = cls()
         assert latest is not None
+
+        kwargs = {key: value for key, value in kwargs.items() if value is not None}
+
+        if not kwargs:
+            return latest.save()
+
         latest = latest.to_mongo()
         latest.update(admin=admin, **kwargs)
 

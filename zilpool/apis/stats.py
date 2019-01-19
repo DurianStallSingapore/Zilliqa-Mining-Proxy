@@ -31,31 +31,31 @@ from zilpool.database import pow, miner, zilnode
 
 def init_apis(config):
     @method
-    async def stats():
+    async def stats(request):
         return summary()
 
     @method
-    async def stats_current():
+    async def stats_current(request):
         return current_work()
 
     @method
     @utils.args_to_lower
-    async def stats_node(pub_key: str):
+    async def stats_node(request, pub_key: str):
         return node_stats(pub_key)
 
     @method
     @utils.args_to_lower
-    async def stats_miner(wallet_address: str):
+    async def stats_miner(request, wallet_address: str):
         return miner_stats(wallet_address)
 
     @method
     @utils.args_to_lower
-    async def stats_worker(wallet_address: str, worker_name: str):
+    async def stats_worker(request, wallet_address: str, worker_name: str):
         return worker_stats(wallet_address, worker_name)
 
     @method
     @utils.args_to_lower
-    async def stats_hashrate(block_num=None, wallet_address=None, worker_name=None):
+    async def stats_hashrate(request, block_num=None, wallet_address=None, worker_name=None):
         return hashrate_stats(block_num, wallet_address, worker_name)
 
 

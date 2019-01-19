@@ -39,7 +39,7 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def eth_getWork() -> [List, Tuple]:
+    async def eth_getWork(request) -> [List, Tuple]:
         # read from database
         min_fee = config.site_settings.min_fee
         max_dispatch = config.site_settings.max_dispatch
@@ -57,7 +57,7 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def eth_submitWork(nonce: str, header: str, mix_digest: str,
+    async def eth_submitWork(request, nonce: str, header: str, mix_digest: str,
                              boundary: str="", miner_wallet: str="", worker_name: str="") -> bool:
         assert (len(nonce) == 18 and
                 len(header) == 66 and
@@ -130,7 +130,7 @@ def init_apis(config):
 
     @method
     @utils.args_to_lower
-    async def eth_submitHashrate(hashrate: str, miner_wallet: str,
+    async def eth_submitHashrate(request, hashrate: str, miner_wallet: str,
                                  worker_name: str="") -> bool:
         hashrate_int, miner_wallet_bytes = h2i(hashrate), h2b(miner_wallet)
         worker_name = valid_worker_name(worker_name)

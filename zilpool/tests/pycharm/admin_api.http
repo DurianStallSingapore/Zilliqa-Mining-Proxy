@@ -1,0 +1,72 @@
+########################################
+# admin_login
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_login", "params": [
+"admin@localhost",
+"wrong password"
+]}
+
+
+########################################
+# admin_login
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_login", "params": [
+"admin@localhost",
+"GiRZeyKv"
+]}
+
+
+########################################
+# admin_set_notification
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_set_notification", "params": [
+"mx4ufYhUqquNyeeB",
+"new notification test"
+]}
+
+
+########################################
+# admin_settings
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_settings", "params": [
+"mx4ufYhUqquNyeeB"
+]}
+
+
+########################################
+# admin_settings
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_settings", "params": [
+"mx4ufYhUqquNyeeB",
+"20"
+]}
+
+
+########################################
+# admin_logout
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_logout", "params": [
+"WiTw1UpghnOIjbI9"
+]}
+
+
+###
+
