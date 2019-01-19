@@ -220,3 +220,43 @@ class ZilAdmin(ModelMixin, mg.Document):
         if not self.update(visa=visa, visa_expire_time=visa_expire_time):
             return None
         return self
+
+
+class SiteSettings(ModelMixin, mg.Document):
+    meta = {"collection": "zil_site_settings"}
+
+    admin = mg.StringField()    # the email of admin who create this setting
+    created = mg.DateTimeField()
+
+    # mining settings
+    min_fee = mg.FloatField(default=0.0)
+    max_dispatch = mg.IntField(default=10)
+    inc_expire = mg.FloatField(default=0)
+
+    # website settings
+    notification = mg.StringField(max_length=1024)
+
+    @classmethod
+    def create_new(cls, **kwargs):
+        kwargs.pop("_id", None)
+        new = cls(**kwargs)
+        new.created = datetime.utcnow()
+        return new
+
+    @classmethod
+    def get_setting(cls):
+        # use the latest one
+        settings = cls.get_one(order="-created")
+        return settings
+
+    @classmethod
+    def update_setting(cls, admin, **kwargs):
+        latest = cls.get_setting()
+        if latest is None:
+            latest = cls()
+        assert latest is not None
+        latest = latest.to_mongo()
+        latest.update(admin=admin, **kwargs)
+
+        new_settings = cls.create_new(**latest)
+        return new_settings.save()

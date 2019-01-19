@@ -40,9 +40,11 @@ def init_apis(config):
     @method
     @utils.args_to_lower
     async def eth_getWork() -> [List, Tuple]:
-        min_fee = config.mining.get("min_fee", 0.0)
-        max_dispatch = config.mining.get("max_dispatch", 10)
-        inc_expire = config.mining.get("inc_expire", 0)
+        # read from database
+        min_fee = config.site_settings.min_fee
+        max_dispatch = config.site_settings.max_dispatch
+        inc_expire = config.site_settings.inc_expire
+
         work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
         if not work:

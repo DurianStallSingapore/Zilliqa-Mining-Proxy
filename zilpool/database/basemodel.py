@@ -21,6 +21,7 @@
 import logging
 from functools import wraps
 from inspect import isclass
+from cachetools import cached, TTLCache
 
 from mongoengine import connect, Document, OperationError
 from mongoengine.connection import get_db, MongoEngineConnectionError
@@ -140,6 +141,7 @@ def get_all_models():
 
 def init_db(config):
     init_admin(config)
+    init_default_settings(config)
 
 
 def init_admin(config):
@@ -168,3 +170,33 @@ def init_admin(config):
                 subject="password generated",
                 msg=f"admin email: {email}\npassword: {password}"
             )
+
+
+def init_default_settings(config):
+    from .ziladmin import SiteSettings
+
+    setting = SiteSettings.get_setting()
+    if setting is None:
+        logging.critical("No default settings in datebase, create one")
+
+        min_fee = config.mining.get("min_fee", 0.0)
+        max_dispatch = config.mining.get("max_dispatch", 10)
+        inc_expire = config.mining.get("inc_expire", 0)
+
+        setting = SiteSettings.create_new(
+            admin="default",
+            min_fee=min_fee,
+            max_dispatch=max_dispatch,
+            inc_expire=inc_expire,
+            notification="",
+        )
+        if not setting.save():
+            logging.exception("can not save default settings to database")
+
+    config["site_settings"] = LocalProxy(get_cur_settings)
+
+
+@cached(cache=TTLCache(maxsize=64, ttl=1))
+def get_cur_settings():
+    from .ziladmin import SiteSettings
+    return SiteSettings.get_setting()

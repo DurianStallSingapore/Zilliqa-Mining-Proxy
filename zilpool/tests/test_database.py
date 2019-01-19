@@ -172,3 +172,45 @@ class TestDatabase:
         admin_token2 = ZilAdminToken.verify_token(token2, action)
         assert admin_token is None
         assert admin_token2 is not None
+
+    def test_site_settings(self):
+        from datetime import datetime
+        from zilpool.database.ziladmin import SiteSettings
+
+        config = get_database_debug_config()
+        drop_all()
+        init_db(config)
+
+        drop_all()
+
+        setting0 = SiteSettings.get_setting()
+        assert setting0 is None
+
+        setting = SiteSettings.update_setting(
+            "admin", min_fee=1.2, max_dispatch=300, inc_expire=1.5,
+            notification="notify"
+        )
+        assert setting is not None
+        assert setting.min_fee == 1.2
+        assert setting.max_dispatch == 300
+        assert setting.inc_expire == 1.5
+        assert setting.notification == "notify"
+        assert setting.created <= datetime.now()
+        assert setting.admin == "admin"
+
+        setting2 = SiteSettings.get_setting()
+        assert setting2 == setting
+
+        setting3 = SiteSettings.update_setting(
+            admin="new admin", notification="notify 22"
+        )
+        assert setting3 is not None
+        assert setting3 != setting
+        assert setting3.min_fee == 1.2
+        assert setting3.max_dispatch == 300
+        assert setting3.inc_expire == 1.5
+        assert setting3.notification == "notify 22"
+        assert setting3.created <= datetime.now()
+        assert setting3.admin == "new admin"
+
+
