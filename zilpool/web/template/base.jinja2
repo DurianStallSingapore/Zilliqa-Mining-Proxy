@@ -36,6 +36,15 @@
         <a class="btn btn btn-dark m-1" href="/#register_node">Register ZIL Node</a>
         <a class="btn btn btn-primary" href="https://github.com/DurianStallSingapore/ZILMiner/releases">Download ZILMiner</a>
       </div>
+      {% if config.site_settings.notification %}
+      <div class="col-12 clearfix"></div>
+      <div class="mx-auto alert alert-warning alert-dismissible fade show" role="alert">
+        {{ config.site_settings.notification }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      {% endif %}
     </nav>
     {% block body %}
         <header class="masthead pt-0 pt-lg-4"></header>

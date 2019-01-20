@@ -29,8 +29,8 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_set_notification", "params": [
-"HywGMUT0oMTzbAAC",
-"new notification test"
+"XdqwsWXugME2e4tz",
+"Warning: This is a demo pool with fake nodes for testing purpose only"
 ]}
 
 
