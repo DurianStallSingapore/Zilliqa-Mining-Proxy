@@ -126,4 +126,70 @@ Cache-Control: no-cache
 "1-31, 66",
 "0x0123456789012345678901234567890123456789"
 ]}
+
+
+########################################
+# stats_reward
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# all
+{"id": 1, "jsonrpc": "2.0", "method": "stats_reward", "params": [
+]}
+
+
+########################################
+# stats_reward
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1-10, all miners
+{"id": 1, "jsonrpc": "2.0", "method": "stats_reward", "params": [
+1,
+10
+]}
+
+########################################
+# stats_reward
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# all blocks, specific miner all workers
+{"id": 1, "jsonrpc": "2.0", "method": "stats_reward", "params": [
+null,
+null,
+"0x0123456789012345678901234567890123456789"
+]}
+
+
+########################################
+# stats_reward
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# blocks 1-10, specific miner all workers
+{"id": 1, "jsonrpc": "2.0", "method": "stats_reward", "params": [
+1,
+10,
+"0x0123456789012345678901234567890123456789"
+]}
+
+########################################
+# stats_reward
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1, specific miner and worker
+{"id": 1, "jsonrpc": "2.0", "method": "stats_reward", "params": [
+1,
+1,
+"0x0123456789012345678901234567890123456789",
+"windows_worker1"
+]}
+
 ###

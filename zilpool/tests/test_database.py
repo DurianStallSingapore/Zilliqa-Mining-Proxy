@@ -213,4 +213,67 @@ class TestDatabase:
         assert setting3.created <= datetime.now()
         assert setting3.admin == "new admin"
 
+    def save_result(self, block_num, pow_fee, miner_wallet, worker_name):
+        from zilpool.database.pow import PowResult
+        pow_result = PowResult(
+            header="header", seed="seed", boundary="boundary",
+            pub_key="pub_key", mix_digest="mix_digest", nonce="nonce",
+            hash_result="hash_result",
+            block_num=block_num,
+            pow_fee=pow_fee,
+            verified=False,
+            miner_wallet=miner_wallet,
+            worker_name=worker_name
+        )
+        return pow_result.save()
 
+    def test_stats_reward(self):
+        from zilpool.database.pow import PowResult
+
+        config = get_database_debug_config()
+        drop_all()
+        init_db(config)
+
+        totol_rewards = []
+        for i in range(10):
+            self.save_result(i, i, "miner1", "worker1")
+            self.save_result(i, i * 2 + 10, "miner1", "worker2")
+            self.save_result(i, i * 5, "miner2", "worker1")
+            totol_rewards.append(i + i * 2 + 10 + i * 5)
+
+        rewards = PowResult.epoch_rewards()
+        assert rewards["count"] == 30
+        assert rewards["rewards"] == sum(totol_rewards)
+
+        rewards = PowResult.epoch_rewards(miner_wallet="miner1")
+        assert rewards["count"] == 20
+        assert rewards["rewards"] == sum(totol_rewards) - sum([i * 5 for i in range(10)])
+
+        rewards = PowResult.epoch_rewards(miner_wallet="miner1", worker_name="worker1")
+        assert rewards["count"] == 10
+        assert rewards["rewards"] == sum(range(10))
+
+        for i in range(10):
+            rewards = PowResult.epoch_rewards(block_num=i)
+            assert rewards["count"] == 3
+            assert rewards["rewards"] == totol_rewards[i]
+
+        rewards = PowResult.epoch_rewards(block_num=(0, 4))
+        assert rewards["count"] == 3 * 5
+        assert rewards["rewards"] == sum(totol_rewards[0:5])
+
+        rewards = PowResult.epoch_rewards(block_num=9,
+                                          miner_wallet="miner1")
+        assert rewards["count"] == 2
+        assert rewards["rewards"] == totol_rewards[9] - 45
+
+        rewards = PowResult.epoch_rewards(block_num=9,
+                                          miner_wallet="miner2")
+        assert rewards["count"] == 1
+        assert rewards["rewards"] == 45
+
+        rewards = PowResult.epoch_rewards(block_num=9,
+                                          miner_wallet="miner1",
+                                          worker_name="worker2")
+        assert rewards["count"] == 1
+        assert rewards["rewards"] == 28

@@ -119,7 +119,7 @@ class Worker(ModelMixin, mg.Document):
         }
         group = {
             "_id": {"miner_wallet": "$miner_wallet", 
-                    "worker_name": "$worker_name",},
+                    "worker_name": "$worker_name"},
         }
 
         return pow.PowResult.aggregate_count(match, group)

@@ -18,7 +18,7 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_login", "params": [
 "admin@localhost",
-"GiRZeyKv"
+"fAP7IcyW"
 ]}
 
 
@@ -29,7 +29,7 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_set_notification", "params": [
-"wlfUJEf0jwzNjvgV",
+"HywGMUT0oMTzbAAC",
 "new notification test"
 ]}
 

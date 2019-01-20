@@ -63,6 +63,13 @@ def init_apis(config):
             for block_num in blocks
         ]
 
+    @method
+    @utils.args_to_lower
+    async def stats_reward(request,
+                           start_block=None, end_block=None,
+                           wallet_address=None, worker_name=None):
+        return reward_stats(start_block, end_block, wallet_address, worker_name)
+
 
 #########################################
 # Stats
@@ -181,4 +188,28 @@ def hashrate_stats(block_num=None, wallet_address=None, worker_name=None):
     return {
         "block_num": block_num,
         "hashrate": miner.HashRate.epoch_hashrate(block_num, wallet_address, worker_name)
+    }
+
+
+def reward_stats(start_block=None, end_block=None,
+                 wallet_address=None, worker_name=None):
+    if start_block is None:
+        start_block = pow.PowWork.get_first_block_num()
+    if end_block is None:
+        end_block = pow.PowWork.get_latest_block_num()
+
+    rewards = pow.PowResult.epoch_rewards(
+        block_num=(start_block, end_block),
+        miner_wallet=wallet_address,
+        worker_name=worker_name
+    )
+    rewards["first_work_at"] = utils.iso_format(rewards["first_work_at"])
+    rewards["last_work_at"] = utils.iso_format(rewards["last_work_at"])
+
+    return {
+        "start_block": start_block,
+        "end_block": end_block,
+        "wallet_address": wallet_address,
+        "worker_name": worker_name,
+        "rewards": rewards,
     }

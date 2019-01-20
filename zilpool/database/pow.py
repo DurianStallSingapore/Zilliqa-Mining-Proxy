@@ -90,6 +90,11 @@ class PowWork(ModelMixin, mg.Document):
         return latest_work.block_num if latest_work else -1
 
     @classmethod
+    def get_first_block_num(cls):
+        first_work = cls.get_latest_work(order="start_time")
+        return first_work.block_num if first_work else -1
+
+    @classmethod
     def get_latest_work(cls, block_num=None, order="-expire_time"):
         if block_num is None:
             cursor = cls.objects()
@@ -187,7 +192,7 @@ class PowWork(ModelMixin, mg.Document):
     def save_result(self, nonce: str, mix_digest: str, hash_result: str,
                     miner_wallet: str, worker_name: str):
         pow_result = PowResult(header=self.header, seed=self.seed,
-                               finished_time=datetime.utcnow(),
+                               finished_time=datetime.utcnow(), pow_fee=self.pow_fee,
                                block_num=self.block_num, hash_result=hash_result,
                                boundary=self.boundary, pub_key=self.pub_key,
                                mix_digest=mix_digest, nonce=nonce, verified=False,
@@ -212,6 +217,7 @@ class PowResult(ModelMixin, mg.Document):
     hash_result = mg.StringField(max_length=128, required=True)
 
     block_num = mg.IntField(default=0)
+    pow_fee = mg.FloatField(default=0.0)
     finished_time = mg.DateTimeField()
     verified_time = mg.DateTimeField()
 
@@ -229,6 +235,68 @@ class PowResult(ModelMixin, mg.Document):
             query = query & Q(pub_key=pub_key)
         cursor = cls.objects(query).order_by(order)    # default to get latest one
         return cursor.first()
+
+    @classmethod
+    def epoch_rewards(cls, block_num=None, miner_wallet=None, worker_name=None):
+        match = {}
+        if block_num is not None:
+            if isinstance(block_num, int):
+                match = {
+                    "block_num": {
+                        "$eq": block_num,
+                    }
+                }
+            else:
+                start, end = block_num
+                match = {
+                    "block_num": {
+                        "$gte": start,
+                        "$lte": end,
+                    }
+                }
+
+        if miner_wallet is not None:
+            match.update({
+                "miner_wallet": {
+                    "$eq": miner_wallet,
+                }
+            })
+
+        if worker_name is not None:
+            match.update({
+                "worker_name": {
+                    "$eq": worker_name,
+                }
+            })
+
+        group = {
+            "_id": None,
+            "rewards": {"$sum": "$pow_fee"},
+            "count": {"$sum": 1},
+            "first_work_at": {"$min": "$finished_time"},
+            "last_work_at": {"$max": "$finished_time"}
+        }
+        project = {
+            "rewards": {"$sum": "$rewards"},
+            "count": {"$sum": "$count"},
+            "first_work_at": {"$min": "$first_work_at"},
+            "last_work_at": {"$max": "$last_work_at"}
+        }
+
+        pipeline = [
+            {"$match": match},
+            {"$group": group},
+            {"$project": project}
+        ]
+
+        res = list(cls.objects.aggregate(*pipeline))
+        if res:
+            rewards = res[0]
+            rewards.pop("_id", None)
+            return rewards
+
+        return {"rewards": None, "count": None,
+                "first_work_at": None, "last_work_at": None}
 
     def get_worker(self):
         return miner.Worker.get_or_create(self.miner_wallet, self.worker_name)
