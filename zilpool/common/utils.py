@@ -127,6 +127,32 @@ def valid_pub_key(pub_key: str):
     return "0x" + key.keypair_str.public
 
 
+def block_num_to_list(block_num=None):
+    if block_num is None or isinstance(block_num, int):
+        blocks = [block_num, ]
+    elif isinstance(block_num, str):
+        blocks = range_str_to_list(block_num)
+    elif isinstance(block_num, (tuple, list)):
+        blocks = block_num
+    else:
+        raise TypeError("Invalid block_num")
+    return blocks
+
+
+def range_str_to_list(range_str: str):
+    range_list = []
+    parts = range_str.split(",")
+    for p in parts:
+        if "-" in p:
+            start, end = map(int, p.split("-", 2))
+            range_list.extend(range(start, end+1))
+        else:
+            num = int(p)
+            range_list.append(num)
+
+    return range_list
+
+
 def iso_format(dt):
     if dt is None:
         return None

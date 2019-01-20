@@ -101,4 +101,29 @@ Cache-Control: no-cache
 "0x0123456789012345678901234567890123456789",
 "windows_worker1"
 ]}
+
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1-5, specific miner
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": [
+[1, 2, 3, 4, 5],
+"0x0123456789012345678901234567890123456789"
+]}
+
+
+########################################
+# stats_hashrate
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# block 1-5, specific miner
+{"id": 1, "jsonrpc": "2.0", "method": "stats_hashrate", "params": [
+"1-31, 66",
+"0x0123456789012345678901234567890123456789"
+]}
 ###

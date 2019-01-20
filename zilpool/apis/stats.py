@@ -56,7 +56,12 @@ def init_apis(config):
     @method
     @utils.args_to_lower
     async def stats_hashrate(request, block_num=None, wallet_address=None, worker_name=None):
-        return hashrate_stats(block_num, wallet_address, worker_name)
+        blocks = utils.block_num_to_list(block_num)
+
+        return [
+            hashrate_stats(block_num, wallet_address, worker_name)
+            for block_num in blocks
+        ]
 
 
 #########################################
