@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from jsonrpcserver import method
 
 from zilpool.common.utils import iso_format, get_client_ip
 from zilpool.database.ziladmin import ZilAdmin, SiteSettings
+from zilpool.database.zilnode import ZilNode
 
 
 def init_apis(config):
@@ -77,9 +79,58 @@ def init_apis(config):
             "inc_expire": new_setting.inc_expire,
         }
 
+    @method
+    async def admin_approve_node(request, visa: str,
+                                 pub_key: str):
+        assert len(pub_key) == 68, "Invalid Public Key"
+
+        admin = get_admin_from_visa(request, visa)
+        node = admin_auth_node(pub_key, approve=True)
+
+        return {
+            "pub_key": node.pub_key,
+            "authorized": node.authorized,
+        }
+
+    @method
+    async def admin_revoke_node(request, visa: str,
+                                pub_key: str):
+        assert len(pub_key) == 68, "Invalid Public Key"
+
+        admin = get_admin_from_visa(request, visa)
+        node = admin_auth_node(pub_key, approve=False)
+
+        return {
+            "pub_key": node.pub_key,
+            "authorized": node.authorized,
+        }
+
 
 def get_admin_from_visa(request, visa: str):
     ip = get_client_ip(request)
     admin = ZilAdmin.check_visa(visa=visa, ext_data=ip)
     assert admin, "invalid auth visa"
     return admin
+
+
+def admin_auth_node(pub_key, approve):
+    from zilpool.web import tools
+
+    node = ZilNode.get_by_pub_key(pub_key, authorized=None)
+    assert node, "Node not found"
+
+    if approve != node.authorized:
+        node = node.update(authorized=approve)
+        assert node, "failed to update database"
+
+        action = "Approved" if approve else "Revoked"
+        messages = f"Node Register {action}: {node.pub_key}"
+
+        logging.info(messages)
+
+        if node.email:
+            tools.send_auth_notification_email(
+                node.email, messages=messages
+            )
+
+    return node

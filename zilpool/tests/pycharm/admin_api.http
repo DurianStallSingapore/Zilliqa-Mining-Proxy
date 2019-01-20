@@ -29,7 +29,7 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_set_notification", "params": [
-"mx4ufYhUqquNyeeB",
+"wlfUJEf0jwzNjvgV",
 "new notification test"
 ]}
 
@@ -41,7 +41,7 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_settings", "params": [
-"mx4ufYhUqquNyeeB"
+"wlfUJEf0jwzNjvgV"
 ]}
 
 
@@ -52,8 +52,32 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_settings", "params": [
-"mx4ufYhUqquNyeeB",
-"20"
+"wlfUJEf0jwzNjvgV",
+"40"
+]}
+
+
+########################################
+# admin_approve_node
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_approve_node", "params": [
+"fi9GCvAeIIldzxJM",
+"0x000000000000000000000000000000000000000000000000000000000000000003"
+]}
+
+
+########################################
+# admin_revoke_node
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_revoke_node", "params": [
+"fi9GCvAeIIldzxJM",
+"0x000000000000000000000000000000000000000000000000000000000000000003"
 ]}
 
 
@@ -64,7 +88,7 @@ Accept: application/json
 Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_logout", "params": [
-"WiTw1UpghnOIjbI9"
+"wlfUJEf0jwzNjvgV"
 ]}
 
 
