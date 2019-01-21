@@ -260,11 +260,14 @@ async def start_loop(loop, args, nodes):
         while True:
             print(f"[LOOP] Start PoW at block {cur_block}")
 
+            pow_start = time.time()
             tasks = [node.do_pow(session, cur_block) for node in nodes]
             await asyncio.wait(tasks, timeout=args.pow)
+            pow_seconds = time.time() - pow_start
 
-            print(f"[LOOP] Sleep {args.epoch} seconds, waiting for next POW")
-            await asyncio.sleep(args.epoch)
+            seconds_to_wait = args.epoch + args.pow - pow_seconds
+            print(f"[LOOP] Sleep {seconds_to_wait} seconds, waiting for next POW")
+            await asyncio.sleep(seconds_to_wait)
 
             cur_block += 1
 

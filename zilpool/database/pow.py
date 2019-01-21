@@ -159,12 +159,12 @@ class PowWork(ModelMixin, mg.Document):
         if not prev_epoch_work:
             return 0      # can find work in prev epoch
 
-        epoch_time = latest_work.start_time - prev_epoch_work.expire_time
+        epoch_time = latest_work.expire_time - prev_epoch_work.expire_time
 
         # 4. get the first work in this epoch
         first_work_this_epoch = cls.get_latest_work(block_num=cur_block, order="expire_time")
         if first_work_this_epoch:
-            epoch_time = first_work_this_epoch.start_time - prev_epoch_work.expire_time
+            epoch_time = first_work_this_epoch.expire_time - prev_epoch_work.expire_time
 
         if epoch_time.total_seconds() <= 0:
             return 0      # epoch time is less than pow window, overlap
