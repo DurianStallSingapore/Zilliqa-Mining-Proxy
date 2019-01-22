@@ -21,6 +21,7 @@ from jsonrpcserver import method
 from zilpool.common.utils import iso_format, get_client_ip
 from zilpool.database.ziladmin import ZilAdmin, SiteSettings
 from zilpool.database.zilnode import ZilNode
+from zilpool.database.miner import Miner
 
 
 def init_apis(config):
@@ -104,6 +105,35 @@ def init_apis(config):
             "pub_key": node.pub_key,
             "authorized": node.authorized,
         }
+
+    @method
+    async def admin_list_miners(request, visa: str, page=0, per_page=50):
+        admin = get_admin_from_visa(request, visa)
+        return [
+            {
+                "email": m.email,
+                "authorized": m.authorized,
+                "email_verified": m.email_verified,
+                "wallet_address": m.wallet_address,
+                "join_date": iso_format(m.join_date),
+                "rewards": m.rewards,
+                "paid": m.paid,
+            }
+            for m in Miner.paginate(page=page, per_page=per_page)
+        ]
+
+    @method
+    async def admin_list_nodes(request, visa: str, page=0, per_page=50):
+        admin = get_admin_from_visa(request, visa)
+        return [
+            {
+                "email": node.email,
+                "authorized": node.authorized,
+                "pow_fee": node.pow_fee,
+                "pub_key": node.pub_key,
+            }
+            for node in ZilNode.paginate(page=page, per_page=per_page)
+        ]
 
 
 def get_admin_from_visa(request, visa: str):

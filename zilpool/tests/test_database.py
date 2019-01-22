@@ -277,3 +277,51 @@ class TestDatabase:
                                           worker_name="worker2")
         assert rewards["count"] == 1
         assert rewards["rewards"] == 28
+
+    def test_paginate(self):
+        from zilpool.database.miner import Miner
+        from zilpool.database.zilnode import ZilNode
+
+        config = get_database_debug_config()
+        drop_all()
+        init_db(config)
+
+        for i in range(149):
+            node = ZilNode(pub_key=f"pub_key_{i}", pow_fee=i, email=f"email_{i}")
+            node.save()
+
+        page = ZilNode.paginate(page=0, per_page=50)
+        assert len(page) == 50
+        assert page[0]["pub_key"] == ZilNode.get_one().pub_key
+        page = ZilNode.paginate(page=2, per_page=50)
+        assert len(page) == 49
+
+        all_nodes = ZilNode.get_all()
+        for i in range(49):
+            node = page[i]
+            assert node["pub_key"] == all_nodes[100+i].pub_key
+
+        for i in range(201):
+            m = Miner(wallet_address=f"wallet_address_{i}")
+            m.save()
+
+        all_miners = Miner.get_all()
+        total = len(all_miners)
+
+        page = Miner.paginate(page=0, per_page=50)
+        assert len(page) == 50
+        assert page[0]["wallet_address"] == Miner.get_one().wallet_address
+        page = Miner.paginate(page=4, per_page=50)
+        assert len(page) == 1
+        assert page[0]["wallet_address"] == all_miners[total-1].wallet_address
+
+        page = Miner.paginate(page=1, per_page=50)
+        assert len(page) == 50
+        for i in range(50):
+            miner = page[i]
+            assert miner["wallet_address"] == all_miners[50+i].wallet_address
+
+
+
+
+

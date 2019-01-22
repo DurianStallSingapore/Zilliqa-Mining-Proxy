@@ -80,6 +80,15 @@ class ModelMixin:
         return res[0]["count"] if res else 0
 
     @classmethod
+    def query(cls, **kwargs):
+        return cls.objects(**kwargs)
+
+    @classmethod
+    def paginate(cls, page=0, per_page=50, **kwargs):
+        query = cls.query(**kwargs)
+        return query.skip(page * per_page).limit(per_page).all()
+
+    @classmethod
     @fail_safe
     def get(cls, first=True, order=None, **kwargs):
         cursor = cls.objects(**kwargs)
