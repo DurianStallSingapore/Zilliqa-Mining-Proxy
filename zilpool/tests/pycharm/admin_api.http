@@ -18,7 +18,7 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_login", "params": [
 "admin@localhost",
-"fAP7IcyW"
+"5J8SQZho"
 ]}
 
 
@@ -91,6 +91,31 @@ Cache-Control: no-cache
 "wlfUJEf0jwzNjvgV"
 ]}
 
+
+########################################
+# admin_list_miners
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_list_miners", "params": [
+"ANcMPkENKiUjfBQ0",
+0,
+10
+]}
+
+
+########################################
+# admin_list_nodes
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "admin_list_nodes", "params": [
+"ANcMPkENKiUjfBQ0",
+0,
+2
+]}
 
 ###
 
