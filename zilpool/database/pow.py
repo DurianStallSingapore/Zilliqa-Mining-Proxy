@@ -115,6 +115,8 @@ class PowWork(ModelMixin, mg.Document):
         if not last_pow_work:
             return None, None
 
+        block_num = last_pow_work.block_num
+
         first_pow_work = cls.get_latest_work(block_num=block_num, order="start_time")
 
         return first_pow_work.start_time, last_pow_work.expire_time
