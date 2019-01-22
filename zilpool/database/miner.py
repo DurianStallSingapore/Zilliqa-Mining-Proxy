@@ -171,14 +171,14 @@ class HashRate(ModelMixin, mg.Document):
     def epoch_hashrate(cls, block_num=None, wallet_address=None, worker_name=None):
         from .pow import PowWork
 
-        epoch_start, epoch_end = PowWork.calc_epoch_window(block_num)
-        if not epoch_start or not epoch_end:
-            return -1
+        pow_start, pow_end = PowWork.calc_pow_window(block_num)
+        if not pow_start or not pow_end:
+            return 0
 
         match = {
             "updated_time": {
-                "$gte": epoch_start,
-                "$lte": epoch_end,
+                "$gte": pow_start,
+                "$lte": pow_end,
             }
         }
 
