@@ -102,14 +102,12 @@ def current_work():
     latest_work = pow.PowWork.get_latest_work()
 
     block_num = 0
-    difficulty = 0
+    difficulty = [0, 0]
     start_time = None
     if latest_work:
         block_num = latest_work.block_num
         start_time = latest_work.start_time
-        difficulty = ethash.boundary_to_difficulty(
-            crypto.hex_str_to_bytes(latest_work.boundary)
-        )
+        difficulty = sorted(pow.PowWork.epoch_difficulty())
 
     now = datetime.utcnow()
     secs_next_pow = pow.PowWork.calc_seconds_to_next_pow()

@@ -120,6 +120,16 @@ class PowWork(ModelMixin, mg.Document):
         return first_pow_work.start_time, last_pow_work.expire_time
 
     @classmethod
+    def epoch_difficulty(cls, block_num=None):
+        if block_num is None:
+            block_num = cls.get_latest_block_num()
+
+        return [
+            ethash.boundary_to_hashpower(boundary)
+            for boundary in cls.query(block_num=block_num).distinct("boundary")
+        ]
+
+    @classmethod
     def calc_epoch_window(cls, block_num=None):
         if block_num is None:
             block_num = cls.get_latest_block_num()

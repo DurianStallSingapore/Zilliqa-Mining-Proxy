@@ -79,6 +79,20 @@ def boundary_to_difficulty(boundary: bytes) -> int:
 
 assert boundary_to_difficulty(difficulty_to_boundary(11)) == 11
 
+dividend = 0xffff000000000000000000000000000000000000000000000000000000000000
+
+
+def boundary_to_hashpower(boundary) -> int:
+    if isinstance(boundary, str):
+        return dividend // crypto.hex_str_to_int(boundary)
+    elif isinstance(boundary, bytes):
+        return dividend // crypto.bytes_to_int(boundary)
+    raise TypeError("Type of boundary should be str or bytes")
+
+
+def difficulty_to_hashpower(difficulty: int) -> int:
+    return boundary_to_hashpower(difficulty_to_boundary(difficulty))
+
 
 def is_less_or_equal(hash_1: Union[str, bytes],
                      hash_2: Union[str, bytes]) -> bool:

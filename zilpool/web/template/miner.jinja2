@@ -115,7 +115,7 @@ $(document).ready(function() {
 
   $(".hashrate").each(function () {
     let hashrate = $(this).text();
-    $(this).text(covert_hashrate(hashrate, 1));
+    $(this).text(covert_hashrate(hashrate, 1) + "/s");
   });
 });
 </script>

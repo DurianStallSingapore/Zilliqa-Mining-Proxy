@@ -37,6 +37,12 @@
                   <td id="next_pow_time">{{ current.next_pow_time }}</td>
                 </tr>
                 <tr>
+                  <th scope="row">Difficulty Shard/DS</th>
+                  <td><span class="difficulty">{{ current.difficulty[0] }}</span>
+                    / <span class="difficulty">{{ current.difficulty[-1] }}</span>
+                  </td>
+                </tr>
+                <tr>
                   <th scope="row">PoW Workers</th>
                   <td>{{ summary.workers.active }} / {{ summary.workers.all }}</td>
                 </tr>
@@ -269,8 +275,13 @@
 
     $(".hashrate").each(function () {
       let hashrate = $(this).text();
-      $(this).text(covert_hashrate(hashrate, 1));
+      $(this).text(covert_hashrate(hashrate, 1) + "/s");
     });
+
+    $(".difficulty").each(function(){
+      let diff = $(this).text();
+      $(this).text(covert_hashrate(diff, 1));
+    })
   });
 </script>
 {% endblock %}
