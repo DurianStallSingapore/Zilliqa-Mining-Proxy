@@ -170,7 +170,7 @@ class PowWork(ModelMixin, mg.Document):
             return 0      # epoch time is less than pow window, overlap
 
         # 5. roughly calc next pow time
-        next_pow_time = latest_work.start_time + epoch_time
+        next_pow_time = first_work_this_epoch.start_time + epoch_time
 
         if now > next_pow_time:
             return 0      # pow already start but no work received
