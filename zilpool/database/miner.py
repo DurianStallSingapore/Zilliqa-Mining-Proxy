@@ -201,14 +201,15 @@ class HashRate(ModelMixin, mg.Document):
                     "worker_name": "$worker_name", },
             "hashrate": {"$max": "$hashrate"}
         }
-        project = {
+        group_sum = {
+            "_id": None,
             "hashrate": {"$sum": "$hashrate"}
         }
 
         pipeline = [
             {"$match": match},
             {"$group": group},
-            {"$project": project}
+            {"$group": group_sum}
         ]
 
         res = list(cls.objects.aggregate(*pipeline))

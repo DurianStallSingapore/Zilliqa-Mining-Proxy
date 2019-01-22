@@ -288,17 +288,10 @@ class PowResult(ModelMixin, mg.Document):
             "first_work_at": {"$min": "$finished_time"},
             "last_work_at": {"$max": "$finished_time"}
         }
-        project = {
-            "rewards": {"$sum": "$rewards"},
-            "count": {"$sum": "$count"},
-            "first_work_at": {"$min": "$first_work_at"},
-            "last_work_at": {"$max": "$last_work_at"}
-        }
 
         pipeline = [
             {"$match": match},
             {"$group": group},
-            {"$project": project}
         ]
 
         res = list(cls.objects.aggregate(*pipeline))
