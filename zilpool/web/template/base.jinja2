@@ -15,6 +15,7 @@
     <!-- Custom styles for this template -->
     <link href="/static/css/landing-page.min.css" rel="stylesheet">
     <link href="/static/css/site.css" rel="stylesheet">
+    <style type="text/css">{% block css %}{% endblock %}</style>
   </head>
 
   <body>
@@ -54,7 +55,9 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
-            <p class="text-muted small mb-4 mb-lg-0">&copy; 2019 {{ config.pool.title }}. All Rights Reserved.</p>
+            <p class="text-muted small mb-4 mb-lg-0">&copy; 2019 {{ config.pool.title }}. All Rights Reserved.
+            <a href="/admin"> Admin</a>
+            </p>
           </div>
           <div class="col-lg-6 h-100 text-center text-lg-right my-auto">
             <ul class="list-inline mb-0">

@@ -231,6 +231,11 @@ class ZilAdmin(ModelMixin, mg.Document):
     def logout(self):
         return self.update(visa="")
 
+    def change_password(self, password):
+        self.visa = ""
+        self.password_hash = encrypt_password(password)
+        return self.save()
+
     def create_visa(self, expire_secs=30*60, ext_data=""):
         visa = crypto.rand_string(self.VISA_LENGTH) + ext_data
         visa_expire_time = datetime.utcnow() + timedelta(seconds=expire_secs)

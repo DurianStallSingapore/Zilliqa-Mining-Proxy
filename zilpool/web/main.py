@@ -22,7 +22,7 @@ import aiohttp_jinja2
 
 from zilpool.apis import stats
 from zilpool.web import tools
-from zilpool.database import zilnode, ziladmin
+from zilpool.apis import admin as admin_api
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -100,6 +100,42 @@ def init_web_handlers(app, config):
 
     app.router.add_route(
         "GET", f"{root_path}node/{{pub_key}}", show_node
+    )
+
+    @aiohttp_jinja2.template("admin_login.jinja2")
+    async def admin_login(request):
+        return {
+            "config": config,
+        }
+
+    async def admin_dashboard(request):
+        data = await request.post()
+        admin_email = data.get("email")
+        password = data.get("password")
+        admin = admin_api.login(request, admin_email, password)
+
+        context = {"config": config}
+
+        if not admin:
+            tplt = "admin_login.jinja2"
+            context.update({
+                "email": admin_email,
+                "error": "Invalid Login Credentials",
+            })
+        else:
+            tplt = "admin_dashboard.jinja2"
+            context.update({
+                "visa": admin.visa_without_ext_data,
+                "expire_at": admin.visa_expire_time,
+            })
+
+        return aiohttp_jinja2.render_template(tplt, request, context)
+
+    app.router.add_route(
+        "GET", f"{root_path}admin", admin_login
+    )
+    app.router.add_route(
+        "POST", f"{root_path}admin", admin_dashboard
     )
 
 

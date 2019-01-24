@@ -18,6 +18,8 @@
 import logging
 from jsonrpcserver import method
 
+from zilpool.pyzil import crypto
+from zilpool.common.mail import EmailClient
 from zilpool.common.utils import iso_format, get_client_ip
 from zilpool.database.ziladmin import ZilAdmin, SiteSettings
 from zilpool.database.zilnode import ZilNode
@@ -28,8 +30,7 @@ def init_apis(config):
     @method
     async def admin_login(request, email: str, password: str):
         ip = get_client_ip(request)
-        admin = ZilAdmin.login(email=email, password=password,
-                               expire_secs=10*60, ext_data=ip)
+        admin = login(request, email, password)
         assert admin, "wrong email/password"
         return {
             "email": admin.email,
@@ -45,6 +46,28 @@ def init_apis(config):
         admin = admin.logout()
         if not admin:
             return False
+
+        return True
+
+    @method
+    async def admin_generate_password(request, email: str):
+        admin = ZilAdmin.get_one(email=email)
+        if not admin:
+            return False
+
+        password = crypto.rand_string(8)
+        if not admin.change_password(password=password):
+            return False
+
+        logging.critical(f"Re-generate admin password for {admin.email}: {password}")
+        logging.critical(f"send mail to {admin.email}")
+
+        EmailClient.set_config(config)
+        EmailClient.send_admin_mail(
+            admin.email,
+            subject="password generated",
+            msg=f"admin email: {admin.email}\npassword: {password}"
+        )
 
         return True
 
@@ -134,6 +157,13 @@ def init_apis(config):
             }
             for node in ZilNode.paginate(page=page, per_page=per_page)
         ]
+
+
+def login(request, email, password):
+    ip = get_client_ip(request)
+    admin = ZilAdmin.login(email=email, password=password,
+                           expire_secs=10*60, ext_data=ip)
+    return admin
 
 
 def get_admin_from_visa(request, visa: str):

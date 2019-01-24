@@ -18,7 +18,7 @@ function valid_hex_str(s, size) {
 }
 
 function valid_email(value) {
-  return /\S+@\S+\.\S+/.test(value);
+  return /\S+@\S+(\.\S+)?/.test(value);
 }
 
 function jsonrpc(url, method, params, on_success, on_error) {

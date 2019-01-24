@@ -1,0 +1,153 @@
+{% extends "base.jinja2" %}
+{% block css %}
+{% endblock %}
+
+{% block body %}
+{{ super() }}
+<section class="text-center pt-5 pb-4">
+  <div class="container">
+    <div class="row mx-auto">
+      {% if not visa %}
+      <div class="col-12 alert alert-danger fixed-font">
+        Invalid Login Credentials
+      </div>
+      {% else %}
+      <div class="col mx-auto">
+        <ul class="nav nav-tabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="settings-tab" data-toggle="tab" href="#settings" role="tab"
+               aria-controls="settings" aria-selected="true">Settings</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="miners-tab" data-toggle="tab" href="#miners" role="tab"
+               aria-controls="profile" aria-selected="false">Miners</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="nodes-tab" data-toggle="tab" href="#nodes" role="tab"
+               aria-controls="contact" aria-selected="false">Nodes</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+            <!-- Settings -->
+            <div class="card text-left mt-3">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2">Website Settings</h6>
+                <div class="form-group row">
+                  <label for="notification" class="col-lg-2 col-form-label">Notification</label>
+                  <div class="col-lg-6 mb-2">
+                    <input type="text" class="form-control" id="notification"
+                           value="{{ config.site_settings.notification }}">
+                  </div>
+                  <label class="col col-lg-2">
+                    <button id="update_notification" type="submit" class="btn btn-primary w-100">Update</button>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="card text-left mt-3">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2">Mining Settings</h6>
+                <div class="form-group row">
+                  <label for="max_dispatch" class="col-lg-2 col-form-label">Max Dispatch Count</label>
+                  <div class="col-lg-2">
+                    <input type="number" class="form-control" id="max_dispatch"
+                           value="{{ config.site_settings.max_dispatch }}">
+                  </div>
+                  <label class="col col-form-label">max dispatch count per work</label>
+                </div>
+                <div class="form-group row">
+                  <label for="min_fee" class="col-lg-2 col-form-label">Min PoW Fee</label>
+                  <div class="col-lg-2">
+                    <input type="number" class="form-control" id="min_fee"
+                           value="{{ config.site_settings.min_fee }}">
+                  </div>
+                  <label class="col col-form-label">work will not dispatch if pow_fee < min_fee, in ZILs/work </label>
+                </div>
+                <div class="form-group row">
+                  <label for="inc_expire" class="col-lg-2 col-form-label">Increase Expire</label>
+                  <div class="col-lg-2">
+                    <input type="number" class="form-control" id="inc_expire"
+                           value="{{ config.site_settings.inc_expire }}">
+                  </div>
+                  <label class="col col-form-label">increase work's expired time when it dispatched, in seconds</label>
+                </div>
+                <div class="form-group row">
+                  <div class="col-lg-2"></div>
+                  <div class="col-lg-2">
+                    <button id="update_mining_settings" type="submit" class="btn btn-primary w-100">Update</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="miners" role="tabpanel" aria-labelledby="miners-tab">
+            <!-- Miners -->
+            Miners
+          </div>
+          <div class="tab-pane fade" id="nodes" role="tabpanel" aria-labelledby="nodes-tab">
+            <!-- Nodes -->
+            Nodes
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block script %}
+<script src="/static/vendor/bootstrap-notify.js"></script>
+<script>
+let visa = "{{ visa }}";
+
+function show_msg(msg, style) {
+  $.notify({
+    message: msg
+  },{
+    delay: 3000,
+    type: style || "success"
+  });
+}
+
+function admin_api(action, ...params) {
+  jsonrpc(
+    "/api",
+    action,
+    [visa, ...params],
+    function (result) {
+      if (!result) {
+        show_msg("Failed " + action, "danger");
+      } else {
+        show_msg("Success!");
+      }
+    },
+    function (error) {
+      show_msg(error, "danger");
+    }
+  );
+}
+
+$(document).ready(function() {
+  $("#update_notification").click(function () {
+    let notification = $.trim($("#notification").val());
+
+    admin_api("admin_set_notification", notification);
+  });
+
+  $("#update_mining_settings").click(function () {
+    let min_fee = $.trim($("#min_fee").val());
+    let max_dispatch = $.trim($("#max_dispatch").val());
+    let inc_expire = $.trim($("#inc_expire").val());
+
+    admin_api("admin_settings",
+        parseFloat(min_fee),
+        parseInt(max_dispatch),
+        parseFloat(inc_expire));
+  });
+
+
+});
+</script>
+{% endblock %}
