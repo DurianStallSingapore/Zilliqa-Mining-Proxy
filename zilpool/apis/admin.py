@@ -157,6 +157,7 @@ def init_apis(config):
                 "authorized": node.authorized,
                 "pow_fee": node.pow_fee,
                 "pub_key": node.pub_key,
+                "works": node.works_stats()
             }
             for node in ZilNode.paginate(page=page, per_page=per_page)
         ]

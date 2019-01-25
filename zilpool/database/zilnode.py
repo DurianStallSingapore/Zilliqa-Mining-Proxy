@@ -20,6 +20,7 @@ import logging
 from datetime import datetime, timedelta
 
 import mongoengine as mg
+from mongoengine import Q
 
 from .basemodel import ModelMixin
 
@@ -99,3 +100,15 @@ class ZilNode(ModelMixin, mg.Document):
         }
 
         return pow.PowWork.aggregate_count(match, group)
+
+    def works_stats(self):
+        from .pow import PowWork, PowResult
+
+        working_q = Q(expire_time__gte=datetime.utcnow()) & Q(finished=False)
+
+        return {
+            "all": PowWork.count(pub_key=self.pub_key),
+            "working": PowWork.count(working_q, pub_key=self.pub_key),
+            "finished": PowWork.count(pub_key=self.pub_key, finished=True),
+            "verified": PowResult.count(pub_key=self.pub_key, verified=True),
+        }

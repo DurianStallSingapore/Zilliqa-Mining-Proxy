@@ -133,12 +133,7 @@ def node_stats(pub_key: str):
             "pub_key": node.pub_key,
             "pow_fee": node.pow_fee,
             "authorized": node.authorized,
-            "works": {
-                "all": pow.PowWork.count(pub_key=pub_key),
-                "working": pow.PowWork.count(working_q, pub_key=pub_key),
-                "finished": pow.PowWork.count(pub_key=pub_key, finished=True),
-                "verified": pow.PowResult.count(pub_key=pub_key, verified=True),
-            }
+            "works": node.works_stats(),
         }
 
 
