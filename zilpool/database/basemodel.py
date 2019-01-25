@@ -113,7 +113,7 @@ class ModelMixin:
 
     @classmethod
     def create(cls, **kwargs):
-        return cls(**kwargs)
+        return cls(**kwargs).save()
 
     @wraps(Document.save)
     @fail_safe

@@ -85,7 +85,6 @@ def node_register(config, pub_key: str, email: str):
     owner = zilnode.ZilNodeOwner.get_one(email=email)
     if not owner:
         owner = zilnode.ZilNodeOwner.create(email=email)
-        owner = owner.save()
 
     if not owner:
         raise Exception("failed to create node owner")

@@ -27,6 +27,127 @@ from . import miner
 from .basemodel import ModelMixin
 
 
+class PoWWindow(ModelMixin, mg.Document):
+    meta = {"collection": "zil_pow_windows"}
+
+    create_time = mg.DateTimeField()
+    block_num = mg.IntField(required=True)
+    estimated_next_pow = mg.DateTimeField()
+
+    pow_start = mg.DateTimeField(default=datetime.utcnow)
+    pow_end = mg.DateTimeField(default=datetime.utcnow)
+    pow_window = mg.FloatField(default=0)
+    epoch_window = mg.FloatField(default=0)
+
+    @classmethod
+    def get_latest_record(cls):
+        return cls.objects().order_by("-create_time").first()
+
+    @classmethod
+    def get_latest_block_num(cls):
+        latest_record = cls.get_latest_record()
+        if not latest_record:
+            return -1
+        return latest_record.block_num
+
+    @classmethod
+    def get_pow_window(cls, block_num=None):
+        record = cls.objects(block_num=block_num).order_by("-create_time").first()
+        if not record:
+            return PowWork.calc_pow_window(block_num)
+        return record.pow_start, record.pow_end
+
+    @classmethod
+    def avg_pow_time(cls, number_blocks=10):
+        """ calc pow window from prev records """
+        query = cls.objects().order_by("-create_time")
+        records = query.limit(number_blocks).all()
+        pow_window_list = [r.pow_window for r in records if r.pow_window > 0]
+        pow_window_list = sorted(pow_window_list)
+        if len(pow_window_list) > 4:
+            pow_window_list = pow_window_list[1:-1]
+
+        pow_in_secs = 0
+        if len(pow_window_list) > 0:
+            pow_in_secs = sum(pow_window_list) / len(pow_window_list)
+        return pow_in_secs
+
+    @classmethod
+    def avg_epoch_time(cls, number_blocks=10):
+        """ calc epoch window( pow included ) from prev records """
+        query = cls.objects().order_by("-create_time")
+        records = query.limit(number_blocks).all()
+        epoch_window_list = [r.epoch_window for r in records if r.epoch_window > 0]
+        epoch_window_list = sorted(epoch_window_list)
+        if len(epoch_window_list) > 4:
+            epoch_window_list = epoch_window_list[1:-1]
+
+        epoch_in_secs = 0
+        if len(epoch_window_list) > 0:
+            epoch_in_secs = sum(epoch_window_list) / len(epoch_window_list)
+        return epoch_in_secs
+
+    @classmethod
+    def seconds_to_next_pow(cls):
+        last_record = cls.get_latest_record()
+        if not last_record or not last_record.estimated_next_pow:
+            return 0
+
+        now = datetime.utcnow()
+        next_pow_time = last_record.estimated_next_pow
+        if now > next_pow_time:
+            logging.warning("we are missing some pow_window records")
+            return 0
+
+        return (next_pow_time - now).total_seconds()
+
+    @classmethod
+    def update_pow_window(cls, work):
+        if not work:
+            return
+
+        last_record_num = -1
+        last_record = cls.get_latest_record()
+        if last_record:
+            last_record_num = last_record.block_num
+
+        if work.block_num < last_record_num:
+            logging.critical("old record found in zil_pow_windows, "
+                             "pls clean the database")
+            return
+
+        if work.block_num == last_record_num:
+            # pow is ongoing, do nothing
+            return
+
+        if work.block_num == last_record_num + 1:
+            # new epoch start
+            # 1. update prev record
+            if last_record:
+                pow_start, pow_end = PowWork.calc_pow_window(last_record_num)
+                if pow_start and pow_end:
+                    pow_window = (pow_end - pow_start).total_seconds()
+                    epoch_window = (work.start_time - pow_start).total_seconds()
+
+                    last_record.update(
+                        pow_start=pow_start,
+                        pow_end=pow_end,
+                        pow_window=pow_window,
+                        epoch_window=epoch_window
+                    )
+
+        # 2. create new record and estimate next pow
+        epoch_delta = timedelta(seconds=cls.avg_epoch_time())
+        estimated_next_pow = work.start_time + epoch_delta
+        new_record = cls.create(
+            block_num=work.block_num,
+            create_time=datetime.utcnow(),
+            pow_start=work.start_time,
+            estimated_next_pow=estimated_next_pow,
+        )
+        return new_record
+
+
 class PowWork(ModelMixin, mg.Document):
     header = mg.StringField(max_length=128, required=True)
     seed = mg.StringField(max_length=128, required=True)
@@ -57,9 +178,11 @@ class PowWork(ModelMixin, mg.Document):
         seed = ethash.block_num_to_seed(block_num)
         seed = crypto.bytes_to_hex_str_0x(seed)
 
-        return cls(header=header, seed=seed, boundary=boundary,
-                   pub_key=pub_key, signature=signature, block_num=block_num,
-                   start_time=start_time, expire_time=expire_time)
+        return cls.create(
+            header=header, seed=seed, boundary=boundary,
+            pub_key=pub_key, signature=signature, block_num=block_num,
+            start_time=start_time, expire_time=expire_time
+        )
 
     @classmethod
     def get_new_works(cls, count=1, min_fee=0.0, max_dispatch=None):
@@ -130,64 +253,6 @@ class PowWork(ModelMixin, mg.Document):
             ethash.boundary_to_hashpower(boundary)
             for boundary in cls.query(block_num=block_num).distinct("boundary")
         ]
-
-    @classmethod
-    def calc_epoch_window(cls, block_num=None):
-        if block_num is None:
-            block_num = cls.get_latest_block_num()
-
-        if block_num == -1:
-            return None, None
-
-        first_pow_work = cls.get_latest_work(block_num=block_num, order="start_time")
-        if not first_pow_work:
-            return None, None
-
-        first_pow_work_next_epoch = cls.get_latest_work(block_num=block_num+1, order="start_time")
-
-        start_time = first_pow_work.start_time
-        end_time = datetime.utcnow()
-        if first_pow_work_next_epoch:
-            end_time = first_pow_work_next_epoch.start_time
-
-        return start_time, end_time
-
-    @classmethod
-    def calc_seconds_to_next_pow(cls):
-        # 1. get the latest work order by expire_time
-        latest_work = cls.get_latest_work()
-        if not latest_work:
-            return 0     # no work, return default
-
-        # 2. check expire_time
-        now = datetime.utcnow()
-        if now <= latest_work.expire_time:
-            return 0      # we still within pow window
-
-        # 3. get last work in prev epoch
-        cur_block = latest_work.block_num
-        prev_block = cur_block - 1
-        prev_epoch_work = cls.get_latest_work(block_num=prev_block)
-        if not prev_epoch_work:
-            return 0      # can find work in prev epoch
-
-        epoch_time = latest_work.expire_time - prev_epoch_work.expire_time
-
-        # 4. get the first work in this epoch
-        first_work_this_epoch = cls.get_latest_work(block_num=cur_block, order="expire_time")
-        if first_work_this_epoch:
-            epoch_time = first_work_this_epoch.expire_time - prev_epoch_work.expire_time
-
-        if epoch_time.total_seconds() <= 0:
-            return 0      # epoch time is less than pow window, overlap
-
-        # 5. roughly calc next pow time
-        next_pow_time = first_work_this_epoch.start_time + epoch_time
-
-        if now > next_pow_time:
-            return 0      # pow already start but no work received
-
-        return (next_pow_time - now).total_seconds()
 
     def increase_dispatched(self, count=1, inc_expire_seconds=0):
         if inc_expire_seconds > 0:

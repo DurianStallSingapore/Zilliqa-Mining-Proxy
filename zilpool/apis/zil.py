@@ -58,8 +58,9 @@ def init_apis(config):
         work = pow.PowWork.new_work(header, block_num, boundary,
                                     pub_key=pub_key, signature=signature,
                                     timeout=timeout)
+        # update pow window
+        pow.PoWWindow.update_pow_window(work)
 
-        work = work.save()
         return work is not None
 
     work_not_done = (False, "", "", "")

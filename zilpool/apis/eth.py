@@ -34,7 +34,7 @@ def init_apis(config):
     )
 
     def no_work():
-        seconds_to_next_pow = pow.PowWork.calc_seconds_to_next_pow()
+        seconds_to_next_pow = pow.PoWWindow.seconds_to_next_pow()
         return "", "", "", False, int(seconds_to_next_pow)
 
     @method
