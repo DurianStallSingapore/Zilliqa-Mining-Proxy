@@ -156,6 +156,7 @@ class PowWork(ModelMixin, mg.Document):
     def calc_seconds_to_next_pow(cls):
         # 1. get the latest work order by expire_time
         latest_work = cls.get_latest_work()
+        latest_block_num = latest_work.block_num
         if not latest_work:
             return 0     # no work, return default
 
@@ -164,25 +165,37 @@ class PowWork(ModelMixin, mg.Document):
         if now <= latest_work.expire_time:
             return 0      # we still within pow window
 
-        # 3. get last work in prev epoch
+        # 3. get last 10 works to find minimum epoch time
+        block_checked = 0
+        MAX_CHECK_BLOCKS = 10
         cur_block = latest_work.block_num
-        prev_block = cur_block - 1
-        prev_epoch_work = cls.get_latest_work(block_num=prev_block)
-        if not prev_epoch_work:
-            return 0      # can find work in prev epoch
+        minimum_epoch_time = None
 
-        epoch_time = latest_work.expire_time - prev_epoch_work.expire_time
+        while cur_block > 1 and block_checked < MAX_CHECK_BLOCKS:
+            current_epoch_work = cls.get_latest_work(block_num=cur_block)
+            if not current_epoch_work:
+                break      # can find work in this epoch
+
+            prev_block = cur_block - 1
+            prev_epoch_work = cls.get_latest_work(block_num=prev_block)
+            if not prev_epoch_work:
+                break      # can find work in prev epoch
+
+            epoch_time = current_epoch_work.expire_time - prev_epoch_work.expire_time
+
+            if block_checked == 0:
+                minimum_epoch_time = epoch_time
+            elif minimum_epoch_time > epoch_time:
+                minimum_epoch_time = epoch_time
+
+            cur_block = prev_block
+            block_checked += 1
 
         # 4. get the first work in this epoch
-        first_work_this_epoch = cls.get_latest_work(block_num=cur_block, order="expire_time")
-        if first_work_this_epoch:
-            epoch_time = first_work_this_epoch.expire_time - prev_epoch_work.expire_time
-
-        if epoch_time.total_seconds() <= 0:
-            return 0      # epoch time is less than pow window, overlap
+        first_work_this_epoch = cls.get_latest_work(block_num=latest_block_num, order="expire_time")
 
         # 5. roughly calc next pow time
-        next_pow_time = first_work_this_epoch.start_time + epoch_time
+        next_pow_time = first_work_this_epoch.start_time + minimum_epoch_time
 
         if now > next_pow_time:
             return 0      # pow already start but no work received
