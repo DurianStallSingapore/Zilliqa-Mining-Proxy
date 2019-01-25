@@ -135,12 +135,15 @@ def init_apis(config):
         return [
             {
                 "email": m.email,
+                "nick_name": m.nick_name,
                 "authorized": m.authorized,
                 "email_verified": m.email_verified,
                 "wallet_address": m.wallet_address,
                 "join_date": iso_format(m.join_date),
                 "rewards": m.rewards,
                 "paid": m.paid,
+                "workers": m.workers_name,
+                "works": m.works_stats(),
             }
             for m in Miner.paginate(page=page, per_page=per_page)
         ]

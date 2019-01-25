@@ -147,7 +147,6 @@ def miner_stats(wallet_address: str):
     if m:
         last_work = pow.PowResult.get(miner_wallet=wallet_address,
                                       order="-finished_time")
-        workers = [w.worker_name for w in m.workers]
         return {
             "wallet_address": m.wallet_address,
             "authorized": m.authorized,
@@ -156,7 +155,7 @@ def miner_stats(wallet_address: str):
             "join_date": utils.iso_format(m.join_date),
             "last_finished_time": utils.iso_format(last_work and last_work.finished_time),
             "hashrate": miner.HashRate.epoch_hashrate(wallet_address=m.wallet_address),
-            "workers": workers,
+            "workers": m.workers_name,
             "works": m.works_stats(),
         }
 

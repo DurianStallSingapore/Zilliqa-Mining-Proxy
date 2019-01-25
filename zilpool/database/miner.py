@@ -44,6 +44,13 @@ class Miner(ModelMixin, mg.Document):
     email_verified = mg.BooleanField(default=False)
     join_date = mg.DateTimeField()
 
+    workers_name = mg.ListField()
+    # stats
+    work_submitted = mg.IntField(default=0)
+    work_failed = mg.IntField(default=0)
+    work_finished = mg.IntField(default=0)
+    work_verified = mg.IntField(default=0)
+
     def __str__(self):
         return f"[Miner: {self.wallet_address}, {self.authorized}]"
 
@@ -62,8 +69,10 @@ class Miner(ModelMixin, mg.Document):
                 set__email=email
             )
             if miner.join_date is None:
-                miner.update(join_date=datetime.utcnow())
-            return miner
+                miner.join_date = datetime.utcnow()
+            if worker_name not in miner.workers_name:
+                miner.workers_name.append(worker_name)
+            return miner.save()
         return None
 
     @property
@@ -71,14 +80,22 @@ class Miner(ModelMixin, mg.Document):
         return Worker.get_all(wallet_address=self.wallet_address)
 
     def works_stats(self):
-        stats = defaultdict(int)
-        for worker in self.workers:
-            stats["work_submitted"] += worker.work_submitted
-            stats["work_failed"] += worker.work_failed
-            stats["work_finished"] += worker.work_finished
-            stats["work_verified"] += worker.work_verified
+        return {
+            "work_submitted": self.work_submitted,
+            "work_failed": self.work_failed,
+            "work_finished": self.work_finished,
+            "work_verified": self.work_verified,
+        }
 
-        return stats
+    def update_stat(self, inc_submitted=0, inc_failed=0, inc_finished=0, inc_verified=0):
+        update_kwargs = {
+            "inc__work_submitted": inc_submitted,
+            "inc__work_failed": inc_failed,
+            "inc__work_finished": inc_finished,
+            "inc__work_verified": inc_verified,
+        }
+        update_kwargs = {key: value for (key, value) in update_kwargs.items() if value > 0}
+        return self.update(**update_kwargs)
 
 
 class Worker(ModelMixin, mg.Document):
@@ -94,6 +111,10 @@ class Worker(ModelMixin, mg.Document):
 
     def __str__(self):
         return f"[Worker: {self.worker_name}.{self.wallet_address}]"
+
+    @property
+    def miner(self):
+        return Miner.get_one(wallet_address=self.wallet_address)
 
     @classmethod
     def get_or_create(cls, wallet_address: str, worker_name: str):
@@ -132,7 +153,14 @@ class Worker(ModelMixin, mg.Document):
             "inc__work_verified": inc_verified,
         }
         update_kwargs = {key: value for (key, value) in update_kwargs.items() if value > 0}
-        return self.update(**update_kwargs)
+        if self.update(**update_kwargs):
+            # update miner's stats
+            self.miner.update_stat(
+                inc_submitted=inc_submitted,
+                inc_failed=inc_failed,
+                inc_finished=inc_finished,
+                inc_verified=inc_verified
+            )
 
     def works_stats(self):
         return {
