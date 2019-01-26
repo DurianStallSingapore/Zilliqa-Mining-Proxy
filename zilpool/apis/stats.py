@@ -110,7 +110,7 @@ def current_work():
         difficulty = sorted(pow.PowWork.epoch_difficulty())
 
     now = datetime.utcnow()
-    secs_next_pow = pow.PowWork.calc_seconds_to_next_pow()
+    secs_next_pow = pow.PoWWindow.seconds_to_next_pow()
     next_pow_time = now + timedelta(seconds=secs_next_pow)
 
     return {
