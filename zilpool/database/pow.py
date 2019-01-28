@@ -94,9 +94,10 @@ class PoWWindow(ModelMixin, mg.Document):
         records = query.limit(number_blocks).all()
         epoch_window_list = [r.epoch_window for r in records if r.epoch_window > 0]
         epoch_window_list = sorted(epoch_window_list)
-        if len(epoch_window_list) > 0:
-            return epoch_window_list[0]
-        return 0        
+        # index 0 is current epoch, the time is 0
+        if len(epoch_window_list) > 1:
+            return epoch_window_list[1]
+        return 0
 
     @classmethod
     def seconds_to_next_pow(cls):
