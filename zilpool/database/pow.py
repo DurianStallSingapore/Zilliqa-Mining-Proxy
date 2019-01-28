@@ -86,6 +86,17 @@ class PoWWindow(ModelMixin, mg.Document):
         if len(epoch_window_list) > 0:
             epoch_in_secs = sum(epoch_window_list) / len(epoch_window_list)
         return epoch_in_secs
+    
+    @classmethod
+    def min_epoch_time(cls, number_blocks=10):
+        """ calc epoch window( pow included ) from prev records """
+        query = cls.objects().order_by("-create_time")
+        records = query.limit(number_blocks).all()
+        epoch_window_list = [r.epoch_window for r in records if r.epoch_window > 0]
+        epoch_window_list = sorted(epoch_window_list)
+        if len(epoch_window_list) > 0:
+            return epoch_window_list[0]
+        return 0        
 
     @classmethod
     def seconds_to_next_pow(cls):
@@ -137,7 +148,7 @@ class PoWWindow(ModelMixin, mg.Document):
                     )
 
         # 2. create new record and estimate next pow
-        epoch_delta = timedelta(seconds=cls.avg_epoch_time())
+        epoch_delta = timedelta(seconds=cls.min_epoch_time())
         estimated_next_pow = work.start_time + epoch_delta
         new_record = cls.create(
             block_num=work.block_num,
