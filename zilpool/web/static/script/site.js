@@ -95,3 +95,7 @@ function covert_hashrate(hashrte, decimals){
 
   return parseFloat((hashrte / Math.pow(k, i)).toFixed(dm)) + ' ' + rates[i];
 }
+
+function numberRange(start, end) {
+  return new Array(end - start).fill(1).map((d, i) => i + start);
+}

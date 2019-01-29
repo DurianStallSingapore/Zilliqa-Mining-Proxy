@@ -20,11 +20,11 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" id="miners-tab" data-toggle="tab" href="#miners" role="tab"
-               aria-controls="profile" aria-selected="false">Miners</a>
+               aria-controls="profile" aria-selected="false">Miners ({{ summary.miners }})</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" id="nodes-tab" data-toggle="tab" href="#nodes" role="tab"
-               aria-controls="contact" aria-selected="false">Nodes</a>
+               aria-controls="contact" aria-selected="false">Nodes ({{ summary.nodes.all }})</a>
           </li>
         </ul>
         <div class="tab-content">
@@ -83,11 +83,49 @@
           </div>
           <div class="tab-pane fade" id="miners" role="tabpanel" aria-labelledby="miners-tab">
             <!-- Miners -->
-            Miners
+            <table class="table table-hover table-bordered mt-3">
+              <thead class="bg-warning text-white">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Wallet Address</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Workers</th>
+                  <th scope="col">Submitted</th>
+                  <th scope="col">Accepted</th>
+                  <!--th scope="col">Rewards</th>
+                  <th scope="col">UnPaid</th-->
+                </tr>
+              </thead>
+              <tbody id="miners_list">
+              </tbody>
+            </table>
+            <nav>
+              <ul id="miners_pager" class="pagination justify-content-center">
+              </ul>
+            </nav>
           </div>
           <div class="tab-pane fade" id="nodes" role="tabpanel" aria-labelledby="nodes-tab">
             <!-- Nodes -->
-            Nodes
+            <table class="table table-hover table-bordered mt-3">
+              <thead class="bg-dark text-white">
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Node Public Key</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Authorized?</th>
+                  <th scope="col">PoW Fee</th>
+                  <th scope="col">Total Works</th>
+                  <th scope="col">Finished</th>
+                  <th scope="col">Verified</th>
+                </tr>
+              </thead>
+              <tbody id="nodes_list">
+              </tbody>
+            </table>
+            <nav>
+              <ul id="nodes_pager" class="pagination justify-content-center">
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
@@ -111,17 +149,21 @@ function show_msg(msg, style) {
   });
 }
 
-function admin_api(action, ...params) {
+function update_callback(result, action) {
+  if (!result) {
+    show_msg("Failed " + action, "danger");
+  } else {
+    show_msg("Success!");
+  }
+}
+
+function admin_api(action, callback, ...params) {
   jsonrpc(
     "/api",
     action,
     [visa, ...params],
     function (result) {
-      if (!result) {
-        show_msg("Failed " + action, "danger");
-      } else {
-        show_msg("Success!");
-      }
+      callback(result, action);
     },
     function (error) {
       show_msg(error, "danger");
@@ -129,11 +171,202 @@ function admin_api(action, ...params) {
   );
 }
 
+/****************
+/ Miners
+*****************/
+let per_page = {{ per_page }};
+let pagers_count = 5;
+
+let miner_cur_page = 0;
+let total_miners = {{ summary.miners }};
+let miner_max_page = Math.trunc((total_miners + per_page - 1)  / per_page);
+if (miner_max_page > 0) {
+  miner_max_page -= 1;
+}
+
+function build_miner_pager() {
+  let $miners_pager = $("#miners_pager");
+  $miners_pager.empty();
+
+  let prev = `<li class="page-item ${miner_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link miner_pager" data-page="0" href="javascript:void(0);">First</a>
+  </li><li class="page-item ${miner_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link miner_prev" href="javascript:void(0);">Previous</a>
+  </li>`;
+
+  let next = `<li class="page-item ${miner_cur_page >= miner_max_page ? 'disabled' : ''}">
+    <a class="page-link miner_next" href="javascript:void(0);">Next</a>
+  </li><li class="page-item ${miner_cur_page >= miner_max_page ? 'disabled' : ''}">
+    <a class="page-link miner_pager" data-page="${miner_max_page}" href="javascript:void(0);">Last</a>
+  </li>`;
+
+  let start_page = Math.trunc(miner_cur_page/pagers_count) * pagers_count;
+  let end_page = Math.min(start_page + pagers_count, miner_max_page);
+
+  let pagers = "";
+  for (let i=start_page; i <= end_page; i++) {
+    pagers += `<li class="page-item ${miner_cur_page === i ? 'active' : ''}">
+<a class="page-link miner_pager" data-page="${i}" href="javascript:void(0);">${i+1}</a></li>`;
+  }
+
+  $miners_pager.append(prev + pagers + next);
+
+  $(".miner_prev").click(function () {
+    miners_query(miner_cur_page - 1);
+  });
+
+  $(".miner_next").click(function () {
+    miners_query(miner_cur_page + 1);
+  });
+
+  $(".miner_pager").click(function () {
+    let $pager = $(this);
+    let data_page = parseInt($pager.attr("data-page"));
+    miners_query(data_page);
+  });
+}
+
+function show_miner_page(miners) {
+  let $miners_list = $("#miners_list");
+  $miners_list.empty();
+  let miner_num = miner_cur_page * per_page;
+
+  for (let miner of miners) {
+    miner_num += 1;
+    let miner_template = `<tr>
+<th scope="row">${miner_num}</th>
+<td class="fixed-font"><a href="/miner/${miner.wallet_address}" target="_blank">${miner.wallet_address}</a></td>
+<td>${miner.email}</td>
+<td>${miner.workers.length}</td>
+<td>${miner.works.work_submitted}</td>
+<td>${miner.works.work_finished}</td>
+<!--td>${miner.rewards}</td>
+<td>${miner.rewards - miner.paid}</td-->
+</tr>`;
+    $miners_list.append(miner_template);
+  }
+}
+
+function miners_callback(result, action) {
+  if (result) {
+    show_miner_page(result);
+    build_miner_pager();
+  } else {
+    show_msg("no more miners", "warning");
+  }
+}
+
+function miners_query(page) {
+  miner_cur_page = page;
+  // query and show miners
+  admin_api("admin_list_miners", miners_callback, miner_cur_page, per_page);
+}
+
+/****************
+/ Nodes
+*****************/
+
+let nodes_cur_page = 0;
+let total_nodes = {{ summary.nodes.all }};
+let nodes_max_page = Math.trunc((total_nodes + per_page - 1)  / per_page);
+if (nodes_max_page > 0) {
+  nodes_max_page -= 1;
+}
+
+function build_node_pager() {
+  let $nodes_pager = $("#nodes_pager");
+  $nodes_pager.empty();
+
+  let prev = `<li class="page-item ${nodes_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link nodes_pager" data-page="0" href="javascript:void(0);">First</a>
+  </li><li class="page-item ${nodes_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link nodes_prev" href="javascript:void(0);">Previous</a>
+  </li>`;
+
+  let next = `<li class="page-item ${nodes_cur_page >= nodes_max_page ? 'disabled' : ''}">
+    <a class="page-link nodes_next" href="javascript:void(0);">Next</a>
+  </li><li class="page-item ${nodes_cur_page >= nodes_max_page ? 'disabled' : ''}">
+    <a class="page-link nodes_pager" data-page="${nodes_max_page}" href="javascript:void(0);">Last</a>
+  </li>`;
+
+  let start_page = Math.trunc(nodes_cur_page/pagers_count) * pagers_count;
+  let end_page = Math.min(start_page + pagers_count, nodes_max_page);
+  let pages_arr = numberRange(start_page, end_page + 1);
+
+  let pagers = "";
+
+  for (let i of pages_arr) {
+    pagers += `<li class="page-item ${nodes_cur_page === i ? 'active' : ''}">
+<a class="page-link nodes_pager" data-page="${i}" href="javascript:void(0);">${i+1}</a></li>`;
+  }
+
+  $nodes_pager.append(prev + pagers + next);
+
+  $(".nodes_prev").click(function () {
+    nodes_query(nodes_cur_page - 1);
+  });
+
+  $(".nodes_next").click(function () {
+    nodes_query(nodes_cur_page + 1);
+  });
+
+  $(".nodes_pager").click(function () {
+    let $pager = $(this);
+    let data_page = parseInt($pager.attr("data-page"));
+    nodes_query(data_page);
+  });
+}
+
+function show_nodes_page(nodes) {
+  let $nodes_list = $("#nodes_list");
+  $nodes_list.empty();
+
+  let nodes_num = nodes_cur_page * per_page;
+  for (let node of nodes) {
+    nodes_num += 1;
+    let node_template = `<tr>
+<th scope="row">${nodes_num}</th>
+<td class="fixed-font"><a href="/node/${node.pub_key}" target="_blank">
+${node.pub_key}</a></td>
+<td>${node.email}</td>
+<td>${node.authorized}</td>
+<td>${node.pow_fee}</td>
+<td>${node.works.all}</td>
+<td>${node.works.finished}</td>
+<td>${node.works.verified}</td>
+</tr>`;
+    $nodes_list.append(node_template);
+  }
+}
+
+function nodes_callback(result, action) {
+  if (result) {
+    show_nodes_page(result);
+    build_node_pager();
+  } else {
+    show_msg("no more node", "warning");
+  }
+}
+
+function nodes_query(page) {
+  nodes_cur_page = page;
+  // query and show nodes
+  admin_api("admin_list_nodes", nodes_callback, nodes_cur_page, per_page);
+}
+
+/****************
+/ Rewards
+*****************/
+
+
+/****************
+/ jquery ready
+*****************/
 $(document).ready(function() {
   $("#update_notification").click(function () {
     let notification = $.trim($("#notification").val());
 
-    admin_api("admin_set_notification", notification);
+    admin_api("admin_set_notification", update_callback, notification);
   });
 
   $("#update_mining_settings").click(function () {
@@ -141,13 +374,12 @@ $(document).ready(function() {
     let max_dispatch = $.trim($("#max_dispatch").val());
     let inc_expire = $.trim($("#inc_expire").val());
 
-    admin_api("admin_settings",
-        parseFloat(min_fee),
-        parseInt(max_dispatch),
-        parseFloat(inc_expire));
+    admin_api("admin_settings", update_callback, parseFloat(min_fee), parseInt(max_dispatch), parseFloat(inc_expire));
   });
 
+  miners_query(0);
 
+  nodes_query(0);
 });
 </script>
 {% endblock %}

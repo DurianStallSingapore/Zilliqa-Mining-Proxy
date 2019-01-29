@@ -127,6 +127,8 @@ def init_web_handlers(app, config):
             context.update({
                 "visa": admin.visa_without_ext_data,
                 "expire_at": admin.visa_expire_time,
+                "summary": stats.summary(),
+                "per_page": 20,
             })
 
         return aiohttp_jinja2.render_template(tplt, request, context)
