@@ -117,6 +117,7 @@
                   <th scope="col">Total Works</th>
                   <th scope="col">Finished</th>
                   <th scope="col">Verified</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody id="nodes_list">
@@ -324,7 +325,7 @@ function show_nodes_page(nodes) {
   let nodes_num = nodes_cur_page * per_page;
   for (let node of nodes) {
     nodes_num += 1;
-    let node_template = `<tr>
+    let node_template = $(`<tr>
 <th scope="row">${nodes_num}</th>
 <td class="fixed-font"><a href="/node/${node.pub_key}" target="_blank">
 ${node.pub_key}</a></td>
@@ -334,7 +335,21 @@ ${node.pub_key}</a></td>
 <td>${node.works.all}</td>
 <td>${node.works.finished}</td>
 <td>${node.works.verified}</td>
-</tr>`;
+</tr>`);
+
+    let $btn_action = $(`<td>
+<button type="button" class="btn btn-primary btn-sm ${node.authorized ? "btn-danger" : "btn-warning"}">
+${node.authorized ? "Revoke" : "Approve"}
+</button></td>`)
+    node_template.append($btn_action);
+
+    $btn_action.click(function () {
+      let action = node.authorized ? "admin_revoke_node" : "admin_approve_node";
+      admin_api(action, function(result, action){
+        nodes_query(nodes_cur_page);
+      }, node.pub_key);
+    });
+
     $nodes_list.append(node_template);
   }
 }
