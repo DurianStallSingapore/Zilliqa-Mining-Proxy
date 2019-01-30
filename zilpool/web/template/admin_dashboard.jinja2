@@ -498,7 +498,7 @@ function rewards_callback(result, action) {
 function rewards_query(page) {
   rewards_cur_page = page;
   let start_block = rewards_cur_page * blocks_per_page;
-  let block_num = `${start_block}-${start_block+blocks_per_page}`;
+  let block_num = `${start_block}-${start_block+blocks_per_page-1}`;
   // query and show nodes
   admin_api("admin_rewards", rewards_callback, block_num);
 }
