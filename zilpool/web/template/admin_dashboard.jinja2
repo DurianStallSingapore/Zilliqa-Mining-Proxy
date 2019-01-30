@@ -412,7 +412,7 @@ function show_rewards_page(rewards) {
   let i = 0;
 
   for (let block_rewards of rewards) {
-    let c = i++ % 2 ? "table-secondary": "table-default";
+    let c = i++ % 2 ? "bg-striped": "";
 
     if (block_rewards["rewards"].length > 0) {
       for (let miner_reward of block_rewards["rewards"]) {

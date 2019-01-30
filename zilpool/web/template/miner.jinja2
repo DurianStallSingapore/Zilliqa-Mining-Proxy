@@ -49,7 +49,7 @@
           <thead class="bg-warning text-white">
             <tr>
               <th scope="col">Miner Wallet</th>
-              <th scope="col" class="fixed-font">
+              <th scope="col" colspan="4" class="fixed-font">
                 {{ miner.wallet_address }}
               </th>
             </tr>
@@ -57,40 +57,47 @@
           <tbody>
             <tr>
               <th scope="row">Authorized?</th>
-              <td class="">{{ "Yes" if miner.authorized else "No" }}</td>
+              <td colspan="4" class="">{{ "Yes" if miner.authorized else "No" }}</td>
             </tr>
             <tr>
               <th scope="row">Total Rewards</th>
-              <td class="">{{ miner.rewards }} ZILs</td>
+              <td colspan="4" class="">{{ miner.rewards }} ZILs</td>
             </tr>
             <tr>
               <th scope="row">Last Work at</th>
-              <td class="utc_time">{{ miner.last_finished_time }}</td>
+              <td colspan="4" class="utc_time">{{ miner.last_finished_time }}</td>
             </tr>
             <tr>
               <th scope="row">Hashrate</th>
-              <td class="hashrate">{{ miner.hashrate }}</td>
+              <td colspan="4" class="hashrate">{{ miner.hashrate }}</td>
             </tr>
             <tr>
               <th scope="row">PoWs Accepted</th>
-              <td class="">{{ miner.works.work_finished }}</td>
+              <td colspan="4" class="">{{ miner.works.work_finished }}</td>
             </tr>
             <tr>
               <th scope="row">PoWs Submitted</th>
-              <td class="">{{ miner.works.work_submitted }}</td>
+              <td colspan="4" class="">{{ miner.works.work_submitted }}</td>
             </tr>
-            <tr>
-              <th scope="row">Workers</th>
-              <td class="">
-                <a href="/miner/{{ miner.wallet_address }}.{{ miner.workers[0] }}">{{ miner.workers[0] }}</a>
-              </td>
+            <tr class="">
+              <th scope="row" colspan="5">Workers</th>
             </tr>
-            {% for worker in miner.workers[1:] %}
+            <tr class="bg-success text-white">
+              <th scope="col">Worker Name</th>
+              <th scope="col">Hashrate</th>
+              <th scope="col">Accepted</th>
+              <th scope="col">Submitted</th>
+              <th scope="col">Last Work at</th>
+            </tr>
+            {% for worker in miner.workers %}
             <tr>
-              <th scope="row"></th>
-              <td class="">
-                <a href="/miner/{{ miner.wallet_address }}.{{ worker }}">{{ worker }}</a>
-              </td>
+              <th scope="row">
+                <a href="/miner/{{ miner.wallet_address }}.{{ worker.worker_name }}">{{ worker.worker_name }}</a>
+              </th>
+              <td class="hashrate">{{ worker.hashrate }}</td>
+              <td class="">{{ worker.works.work_finished }}</td>
+              <td class="">{{ worker.works.work_submitted }}</td>
+              <td class="utc_time">{{ worker.last_finished_time }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -110,7 +117,8 @@ dayjs.extend(dayjs_plugin_relativeTime);
 $(document).ready(function() {
   let $utc = $(".utc_time");
   $utc.each(function () {
-    $(this).text(dayjs().from(dayjs($(this).text())));
+    let utc_time = dayjs($(this).text());
+    $(this).text(utc_time.format("YYYY-MM-DD HH:mm:ss"));
   });
 
   $(".hashrate").each(function () {

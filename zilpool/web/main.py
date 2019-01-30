@@ -71,10 +71,18 @@ def init_web_handlers(app, config):
         address = request.match_info.get("address")
         address_worker = address.split(".", 2)    # address.worker_name
         address = address_worker[0]
+
+        miner = stats.miner_stats(address)
+        if miner:
+            miner["workers"] = [
+                stats.worker_stats(address, worker_name)
+                for worker_name in miner["workers"]
+            ]
+
         resp = {
             "config": config,
             "address": address,
-            "miner": stats.miner_stats(address),
+            "miner": miner,
         }
 
         if len(address_worker) > 1:
