@@ -268,8 +268,10 @@ class PowWork(ModelMixin, mg.Document):
 
     def save_result(self, nonce: str, mix_digest: str, hash_result: str,
                     miner_wallet: str, worker_name: str):
+        now = datetime.utcnow()
         pow_result = PowResult(header=self.header, seed=self.seed,
-                               finished_time=datetime.utcnow(), pow_fee=self.pow_fee,
+                               finished_date=now.date(), finished_time=now,
+                               pow_fee=self.pow_fee,
                                block_num=self.block_num, hash_result=hash_result,
                                boundary=self.boundary, pub_key=self.pub_key,
                                mix_digest=mix_digest, nonce=nonce, verified=False,
@@ -295,6 +297,7 @@ class PowResult(ModelMixin, mg.Document):
 
     block_num = mg.IntField(default=0)
     pow_fee = mg.FloatField(default=0.0)
+    finished_date = mg.DateField()
     finished_time = mg.DateTimeField()
     verified_time = mg.DateTimeField()
 
@@ -350,6 +353,7 @@ class PowResult(ModelMixin, mg.Document):
             "_id": None,
             "rewards": {"$sum": "$pow_fee"},
             "count": {"$sum": 1},
+            "verified": {"$sum": {"$cond": ["$verified", 1, 0]}},
             "first_work_at": {"$min": "$finished_time"},
             "last_work_at": {"$max": "$finished_time"}
         }
@@ -365,8 +369,46 @@ class PowResult(ModelMixin, mg.Document):
             rewards.pop("_id", None)
             return rewards
 
-        return {"rewards": None, "count": None,
+        return {"rewards": None, "count": 0, "verified": 0,
                 "first_work_at": None, "last_work_at": None}
+
+    @classmethod
+    def rewards_by_miners(cls, block_num):
+        if block_num is None:
+            block_num = PowWork.get_latest_block_num()
+
+        match = {
+            "block_num": {
+                "$eq": block_num,
+            }
+        }
+
+        group = {
+            "_id": "$miner_wallet",
+            "block_num": {"$first": "$block_num"},
+            "date": {"$first": "$finished_date"},
+            "rewards": {"$sum": "$pow_fee"},
+            "finished": {"$sum": 1},
+            "verified": {"$sum": {"$cond": ["$verified", 1, 0]}},
+        }
+
+        project = {
+            "_id": 0,
+            "miner_wallet": "$_id",
+            "block_num": 1,
+            "date": 1,
+            "rewards": 1,
+            "finished": 1,
+            "verified": 1,
+        }
+
+        pipeline = [
+            {"$match": match},
+            {"$group": group},
+            {"$project": project}
+        ]
+
+        return list(cls.objects.aggregate(*pipeline))
 
     def get_worker(self):
         return miner.Worker.get_or_create(self.miner_wallet, self.worker_name)

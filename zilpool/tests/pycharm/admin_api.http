@@ -18,7 +18,7 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "admin_login", "params": [
 "admin@localhost",
-"5J8SQZho"
+"SA2tyE1s"
 ]}
 
 
@@ -117,5 +117,43 @@ Cache-Control: no-cache
 2
 ]}
 
+
+########################################
+# admin_rewards
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# latest block
+{"id": 1, "jsonrpc": "2.0", "method": "admin_rewards", "params": [
+"agweXIPevvzQUbLV",
+null
+]}
+
+
+########################################
+# admin_rewards
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# blocks 1 to 10
+{"id": 1, "jsonrpc": "2.0", "method": "admin_rewards", "params": [
+"agweXIPevvzQUbLV",
+"1-10"
+]}
+
+
+########################################
+# admin_rewards
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+# blocks 20 to 10, add block 1
+{"id": 1, "jsonrpc": "2.0", "method": "admin_rewards", "params": [
+"agweXIPevvzQUbLV",
+"20-10, 1"
+]}
 ###
 

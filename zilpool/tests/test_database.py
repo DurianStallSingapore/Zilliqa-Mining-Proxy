@@ -214,14 +214,18 @@ class TestDatabase:
         assert setting3.admin == "new admin"
 
     def save_result(self, block_num, pow_fee, miner_wallet, worker_name):
+        from datetime import datetime
         from zilpool.database.pow import PowResult
+
+        now = datetime.utcnow()
         pow_result = PowResult(
             header="header", seed="seed", boundary="boundary",
             pub_key="pub_key", mix_digest="mix_digest", nonce="nonce",
             hash_result="hash_result",
             block_num=block_num,
+            finished_date=now.date(), finished_time=now,
             pow_fee=pow_fee,
-            verified=False,
+            verified=block_num % 2 == 0,
             miner_wallet=miner_wallet,
             worker_name=worker_name
         )
@@ -243,19 +247,26 @@ class TestDatabase:
 
         rewards = PowResult.epoch_rewards()
         assert rewards["count"] == 30
+        assert rewards["verified"] == 15
         assert rewards["rewards"] == sum(totol_rewards)
 
         rewards = PowResult.epoch_rewards(miner_wallet="miner1")
         assert rewards["count"] == 20
+        assert rewards["verified"] == 10
         assert rewards["rewards"] == sum(totol_rewards) - sum([i * 5 for i in range(10)])
 
         rewards = PowResult.epoch_rewards(miner_wallet="miner1", worker_name="worker1")
         assert rewards["count"] == 10
+        assert rewards["verified"] == 5
         assert rewards["rewards"] == sum(range(10))
 
         for i in range(10):
             rewards = PowResult.epoch_rewards(block_num=i)
             assert rewards["count"] == 3
+            if i % 2 == 0:
+                assert rewards["verified"] == 3
+            else:
+                assert rewards["verified"] == 0
             assert rewards["rewards"] == totol_rewards[i]
 
         rewards = PowResult.epoch_rewards(block_num=(0, 4))
@@ -277,6 +288,9 @@ class TestDatabase:
                                           worker_name="worker2")
         assert rewards["count"] == 1
         assert rewards["rewards"] == 28
+
+        rewards = PowResult.rewards_by_miners(block_num=5)
+        assert len(rewards) == 2
 
     def test_paginate(self):
         from zilpool.database.miner import Miner

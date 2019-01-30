@@ -19,11 +19,13 @@ import logging
 from jsonrpcserver import method
 
 from zilpool.pyzil import crypto
+from zilpool.common import utils
 from zilpool.common.mail import EmailClient
 from zilpool.common.utils import iso_format, get_client_ip
 from zilpool.database.ziladmin import ZilAdmin, SiteSettings
 from zilpool.database.zilnode import ZilNode
 from zilpool.database.miner import Miner
+from zilpool.database.pow import PowWork, PowResult
 
 
 def init_apis(config):
@@ -161,6 +163,26 @@ def init_apis(config):
             }
             for node in ZilNode.paginate(page=page, per_page=per_page)
         ]
+
+    @method
+    async def admin_rewards(request, visa: str, block_num=None):
+        admin = get_admin_from_visa(request, visa)
+
+        blocks = utils.block_num_to_list(block_num)
+        blocks_list = []
+        for b in blocks:
+            if b is None:
+                b = PowWork.get_latest_block_num()
+            blocks_list.append(b)
+
+        rewards = [
+            {
+                "block_num": block_num,
+                "rewards": PowResult.rewards_by_miners(block_num),
+            }
+            for block_num in blocks_list
+        ]
+        return rewards
 
 
 def login(request, email, password):

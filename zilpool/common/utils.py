@@ -145,7 +145,8 @@ def range_str_to_list(range_str: str):
     for p in parts:
         if "-" in p:
             start, end = map(int, p.split("-", 2))
-            range_list.extend(range(start, end+1))
+            step = 1 if start <= end else -1
+            range_list.extend(range(start, end + step, step))
         else:
             num = int(p)
             range_list.append(num)
