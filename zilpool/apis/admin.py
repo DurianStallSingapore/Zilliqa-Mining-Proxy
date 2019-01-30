@@ -168,20 +168,30 @@ def init_apis(config):
     async def admin_rewards(request, visa: str, block_num=None):
         admin = get_admin_from_visa(request, visa)
 
-        blocks = utils.block_num_to_list(block_num)
-        blocks_list = []
-        for b in blocks:
-            if b is None:
-                b = PowWork.get_latest_block_num()
-            blocks_list.append(b)
+        cur_block_num = PowWork.get_latest_block_num()
 
-        rewards = [
-            {
+        blocks_list = utils.block_num_to_list(block_num)
+        rewards = []
+        for block_num in blocks_list:
+            if block_num is None:
+                block_num = cur_block_num
+            if block_num > cur_block_num:
+                continue
+
+            block_rewards = PowResult.rewards_by_miners(block_num)
+            for r in block_rewards:
+                r["date"] = utils.date_format(r["date"])
+                r["date_time"] = utils.iso_format(r["date_time"])
+
+            work = PowWork.get_one(block_num=block_num)
+
+            rewards.append({
                 "block_num": block_num,
-                "rewards": PowResult.rewards_by_miners(block_num),
-            }
-            for block_num in blocks_list
-        ]
+                "date": utils.date_format(work and work.start_time),
+                "count": PowWork.count(block_num=block_num),
+                "rewards": block_rewards,
+            })
+
         return rewards
 
 

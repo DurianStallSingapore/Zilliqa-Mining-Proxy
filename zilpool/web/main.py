@@ -128,6 +128,7 @@ def init_web_handlers(app, config):
                 "visa": admin.visa_without_ext_data,
                 "expire_at": admin.visa_expire_time,
                 "summary": stats.summary(),
+                "current": stats.current_work(),
                 "per_page": 20,
             })
 

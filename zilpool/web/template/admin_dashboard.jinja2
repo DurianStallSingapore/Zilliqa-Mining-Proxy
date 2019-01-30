@@ -135,7 +135,24 @@
 
           <div class="tab-pane fade" id="rewards" role="tabpanel" aria-labelledby="rewards-tab">
             <!-- Rewards -->
-            Rewards
+            <table class="table table-hover table-bordered mt-3">
+              <thead class="">
+                <tr>
+                  <th scope="col">Block #</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Miner</th>
+                  <th scope="col">Rewards</th>
+                  <th scope="col">Finished</th>
+                  <th scope="col">Verified</th>
+                </tr>
+              </thead>
+              <tbody id="rewards_list">
+              </tbody>
+            </table>
+            <nav>
+              <ul id="rewards_pager" class="pagination justify-content-center">
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
@@ -381,7 +398,110 @@ function nodes_query(page) {
 /****************
 / Rewards
 *****************/
+let blocks_per_page = 10;
+let rewards_cur_page = 0;
+let total_blocks = {{ current.block_num + 1 }};
+let rewards_max_page = Math.trunc((total_blocks + blocks_per_page - 1)  / blocks_per_page);
+if (rewards_max_page > 0) {
+  rewards_max_page -= 1;
+}
 
+function show_rewards_page(rewards) {
+  let $rewards_list = $("#rewards_list");
+  $rewards_list.empty();
+  let i = 0;
+
+  for (let block_rewards of rewards) {
+    let c = i++ % 2 ? "table-secondary": "table-default";
+
+    if (block_rewards["rewards"].length > 0) {
+      for (let miner_reward of block_rewards["rewards"]) {
+        let reward_template = $(`<tr class="${c}">
+          <th scope="row">${miner_reward.block_num}</th>
+          <td>${miner_reward.date}</td>
+          <td class="fixed-font"><a href="/miner/${miner_reward.miner_wallet}" target="_blank">
+          ${miner_reward.miner_wallet}</a></td>
+          <td>${miner_reward.rewards}</td>
+          <td>${miner_reward.finished}</td>
+          <td>${miner_reward.verified}</td>
+        </tr>`
+        );
+        $rewards_list.append(reward_template);
+      }
+    } else {
+      $rewards_list.append(`<tr class="${c}">
+          <th scope="row">${block_rewards.block_num}</th>
+          <td>${block_rewards.date}</td>
+          <td></td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+        </tr>`);
+    }
+  }
+}
+
+function build_rewards_pager() {
+  let $rewards_pager = $("#rewards_pager");
+  $rewards_pager.empty();
+
+  let prev = `<li class="page-item ${rewards_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link rewards_pager" data-page="0" href="javascript:void(0);">First</a>
+  </li><li class="page-item ${rewards_cur_page === 0 ? 'disabled' : ''}">
+    <a class="page-link rewards_prev" href="javascript:void(0);">Previous</a>
+  </li>`;
+
+  let next = `<li class="page-item ${rewards_cur_page >= rewards_max_page ? 'disabled' : ''}">
+    <a class="page-link rewards_next" href="javascript:void(0);">Next</a>
+  </li><li class="page-item ${rewards_cur_page >= rewards_max_page ? 'disabled' : ''}">
+    <a class="page-link rewards_pager" data-page="${rewards_max_page}" href="javascript:void(0);">Last</a>
+  </li>`;
+
+  let start_page = Math.trunc(rewards_cur_page/pagers_count) * pagers_count;
+  let end_page = Math.min(start_page + pagers_count, rewards_max_page);
+  let pages_arr = numberRange(start_page, end_page + 1);
+
+  let pagers = "";
+
+  for (let i of pages_arr) {
+    pagers += `<li class="page-item ${rewards_cur_page === i ? 'active' : ''}">
+<a class="page-link rewards_pager" data-page="${i}" href="javascript:void(0);">${i+1}</a></li>`;
+  }
+
+  $rewards_pager.append(prev + pagers + next);
+
+  $(".rewards_prev").click(function () {
+    rewards_query(rewards_cur_page - 1);
+  });
+
+  $(".rewards_next").click(function () {
+    rewards_query(rewards_cur_page + 1);
+  });
+
+  $(".rewards_pager").click(function () {
+    let $pager = $(this);
+    let data_page = parseInt($pager.attr("data-page"));
+    rewards_query(data_page);
+  });
+}
+
+function rewards_callback(result, action) {
+  if (result) {
+    console.log(result);
+    show_rewards_page(result);
+    build_rewards_pager();
+  } else {
+    show_msg("no more block", "warning");
+  }
+}
+
+function rewards_query(page) {
+  rewards_cur_page = page;
+  let start_block = rewards_cur_page * blocks_per_page;
+  let block_num = `${start_block}-${start_block+blocks_per_page}`;
+  // query and show nodes
+  admin_api("admin_rewards", rewards_callback, block_num);
+}
 
 /****************
 / jquery ready
@@ -404,6 +524,8 @@ $(document).ready(function() {
   miners_query(0);
 
   nodes_query(0);
+
+  rewards_query(0);
 });
 </script>
 {% endblock %}

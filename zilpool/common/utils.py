@@ -160,6 +160,12 @@ def iso_format(dt):
     return dt.strftime("%Y-%m-%dT%H:%M:%S") + dt.strftime(".%f")[:4] + "Z"
 
 
+def date_format(dt):
+    if dt is None:
+        return None
+    return dt.strftime("%Y-%m-%d")
+
+
 SALT_SEP = "$"
 
 

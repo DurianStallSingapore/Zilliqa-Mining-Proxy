@@ -152,7 +152,7 @@ Cache-Control: no-cache
 
 # blocks 20 to 10, add block 1
 {"id": 1, "jsonrpc": "2.0", "method": "admin_rewards", "params": [
-"agweXIPevvzQUbLV",
+"DpHcVE1NjwV5okRv",
 "20-10, 1"
 ]}
 ###
