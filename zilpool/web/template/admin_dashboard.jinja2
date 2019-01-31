@@ -153,6 +153,22 @@
               <ul id="rewards_pager" class="pagination justify-content-center">
               </ul>
             </nav>
+            <div class="card-body text-left">
+              <h6 class="card-subtitle mb-2">Export Rewards</h6>
+              <form target="_blank" method="post" action="/admin/export/rewards">
+                <div class="form-group row">
+                  <label for="block_num" class="col-lg-2 col-form-label">Blocks</label>
+                  <div class="col-lg-3 mb-2">
+                    <input type="text" class="form-control" id="block_num"
+                           name="block_num" value="0-10" placeholder="0-10">
+                  </div>
+                  <label class="col col-lg-2">
+                    <input type="hidden" name="visa" value="{{ visa }}">
+                    <button type="submit" class="btn btn-primary">Export CSV</button>
+                  </label>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

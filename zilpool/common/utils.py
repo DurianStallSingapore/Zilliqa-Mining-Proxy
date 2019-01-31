@@ -128,6 +128,9 @@ def valid_pub_key(pub_key: str):
 
 
 def block_num_to_list(block_num=None):
+    if block_num == "":
+        block_num = None
+
     if block_num is None or isinstance(block_num, int):
         blocks = [block_num, ]
     elif isinstance(block_num, str):

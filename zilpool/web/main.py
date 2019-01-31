@@ -16,12 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import io
+import csv
 
 import jinja2
 import aiohttp_jinja2
+from aiohttp import web
 
 from zilpool.apis import stats
 from zilpool.web import tools
+from zilpool.common import utils
 from zilpool.apis import admin as admin_api
 
 CUR_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -149,4 +153,33 @@ def init_web_handlers(app, config):
         "POST", f"{root_path}admin", admin_dashboard
     )
 
+    async def admin_export_rewards(request):
+        data = await request.post()
+        visa = data.get("visa")
+        block_num = data.get("block_num", "")
+
+        admin = admin_api.get_admin_from_visa(request, visa)
+
+        block_list = utils.block_num_to_list(block_num)
+        blocks_rewards = admin_api.get_rewards(block_list)
+
+        buf = io.StringIO()
+        header = ["block_num", "date_time", "miner_wallet",
+                  "rewards", "finished", "verified"]
+        writer = csv.DictWriter(buf, header, extrasaction="ignore")
+        writer.writeheader()
+        for block in blocks_rewards:
+            for reward in block["rewards"]:
+                writer.writerow(reward)
+
+        return web.Response(
+            headers={
+                "Content-Disposition": "Attachment;filename=rewards.csv"
+            },
+            body=buf.getvalue()
+        )
+
+    app.router.add_route(
+        "POST", f"{root_path}admin/export/rewards", admin_export_rewards
+    )
 
