@@ -130,20 +130,19 @@ class Worker(ModelMixin, mg.Document):
 
     @classmethod
     def active_count(cls):
-        from . import pow
-        two_hours = datetime.utcnow() - timedelta(hours=2)
+        three_hours = datetime.utcnow() - timedelta(hours=3)
 
         match = {
-            "finished_time": {
-                '$gte': two_hours,
+            "updated_time": {
+                "$gte": three_hours,
             }
         }
         group = {
-            "_id": {"miner_wallet": "$miner_wallet", 
+            "_id": {"wallet_address": "$wallet_address",
                     "worker_name": "$worker_name"},
         }
 
-        return pow.PowResult.aggregate_count(match, group)
+        return HashRate.aggregate_count(match, group)
 
     def update_stat(self, inc_submitted=0, inc_failed=0, inc_finished=0, inc_verified=0):
         update_kwargs = {
