@@ -119,7 +119,7 @@ def current_work():
         "utc_time": utils.iso_format(now),
         "start_time": utils.iso_format(start_time),
         "next_pow_time": utils.iso_format(next_pow_time),
-        "avg_hashrate": miner.HashRate.epoch_hashrate(block_num),
+        "avg_hashrate": miner.HashRate.epoch_hashrate(None),
         "avg_pow_fee": pow.PowWork.avg_pow_fee(block_num),
     }
 
