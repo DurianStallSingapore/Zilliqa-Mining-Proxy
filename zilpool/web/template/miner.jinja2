@@ -113,17 +113,25 @@
 <script src="https://unpkg.com/dayjs@1.7.8/dayjs.min.js"></script>
 <script src="https://unpkg.com/dayjs@1.7.8/plugin/relativeTime.js"></script>
 <script>
-dayjs.extend(dayjs_plugin_relativeTime);
+// dayjs.extend(dayjs_plugin_relativeTime);
 $(document).ready(function() {
   let $utc = $(".utc_time");
   $utc.each(function () {
-    let utc_time = dayjs($(this).text());
-    $(this).text(utc_time.format("YYYY-MM-DD HH:mm:ss"));
+    try {
+      let utc_time = dayjs($(this).text());
+      $(this).text(utc_time.format("YYYY-MM-DD HH:mm:ss"));
+    } catch (err) {
+      console.log(err);
+    }
   });
 
   $(".hashrate").each(function () {
-    let hashrate = $(this).text();
-    $(this).text(covert_hashrate(hashrate, 1) + "/s");
+    try {
+      let hashrate = $(this).text();
+      $(this).text(covert_hashrate(hashrate, 1) + "/s");
+    } catch (err) {
+      console.log(err);
+    }
   });
 });
 </script>
