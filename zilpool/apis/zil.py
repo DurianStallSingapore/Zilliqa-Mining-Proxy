@@ -57,7 +57,7 @@ def init_apis(config):
 
         work = pow.PowWork.new_work(header, block_num, boundary,
                                     pub_key=pub_key, signature=signature,
-                                    timeout=timeout)
+                                    timeout=timeout, pow_fee=node.pow_fee)
         # update pow window
         pow.PoWWindow.update_pow_window(work)
 

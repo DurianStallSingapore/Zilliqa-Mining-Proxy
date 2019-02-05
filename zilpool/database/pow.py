@@ -172,14 +172,14 @@ class PowWork(ModelMixin, mg.Document):
 
     @classmethod
     def new_work(cls, header: str, block_num: int, boundary: str,
-                 pub_key="", signature="", timeout=120):
+                 pub_key="", signature="", timeout=120, pow_fee=0.0):
         start_time = datetime.utcnow()
         expire_time = start_time + timedelta(seconds=timeout)
         seed = ethash.block_num_to_seed(block_num)
         seed = crypto.bytes_to_hex_str_0x(seed)
 
         return cls.create(
-            header=header, seed=seed, boundary=boundary,
+            header=header, seed=seed, boundary=boundary, pow_fee=pow_fee,
             pub_key=pub_key, signature=signature, block_num=block_num,
             start_time=start_time, expire_time=expire_time
         )
