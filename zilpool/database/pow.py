@@ -227,6 +227,10 @@ class PowWork(ModelMixin, mg.Document):
         return cursor.order_by(order).first()
 
     @classmethod
+    def get_node_works(cls, pub_key, count=1, order="-start_time"):
+        return cls.get(first=False, order=order, pub_key=pub_key)[:count]
+
+    @classmethod
     def avg_pow_fee(cls, block_num=None):
         if block_num is None:
             block_num = cls.get_latest_block_num()

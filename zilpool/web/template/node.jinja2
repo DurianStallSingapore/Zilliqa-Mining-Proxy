@@ -9,39 +9,65 @@
           Node not found: {{ pub_key }}
         </div>
       {% else %}
-        <div class="col-lg-6 mx-auto">
+        <div class="col-lg-8 mx-auto">
         <table class="table table-hover table-bordered">
           <thead class="thead-dark">
             <tr>
               <th scope="col">Node Public Key</th>
-              <th scope="col" class="fixed-font">{{ node.pub_key[:10] +  "......" + node.pub_key[-8:] }}</th>
+              <th colspan="3" scope="col" class="fixed-font">{{ node.pub_key[:10] +  "......" + node.pub_key[-8:] }}</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <th scope="row">Authorized?</th>
-              <td class="">{{ "Yes" if node.authorized else "No" }}</td>
+              <td colspan="3" class="">{{ "Yes" if node.authorized else "No" }}</td>
             </tr>
             <tr>
               <th scope="row">PoW Reward</th>
-              <td class="">{{ node.pow_fee }} ZILs/work</td>
+              <td colspan="3" class="">{{ node.pow_fee }} ZILs/work</td>
             </tr>
             <tr>
               <th scope="row">Working PoW</th>
-              <td class="">{{ node.works.working }}</td>
+              <td colspan="3" class="">{{ node.works.working }}</td>
             </tr>
             <tr>
               <th scope="row">Total PoW</th>
-              <td class="">{{ node.works.all }}</td>
+              <td colspan="3" class="">{{ node.works.all }}</td>
             </tr>
             <tr>
               <th scope="row">PoW Finished</th>
-              <td class="">{{ node.works.finished }}</td>
+              <td colspan="3" class="">{{ node.works.finished }}</td>
             </tr>
             <tr>
               <th scope="row">PoW Verified</th>
-              <td class="">{{ node.works.verified }}</td>
+              <td colspan="3" class="">{{ node.works.verified }}</td>
             </tr>
+            <tr class="">
+              <th scope="row" colspan="4">Latest PoW Works</th>
+            </tr>
+            <tr>
+              <th scope="col">Block#</th>
+              <th scope="col">Finished</th>
+              <th scope="col">DateTime</th>
+              <th scope="col">Miner</th>
+            </tr>
+            {% if not node.latest_works %}
+            <tr>
+              <th scope="row" colspan="4">None</th>
+            </tr>
+            {% endif %}
+            {% for work in node.latest_works %}
+              <tr>
+                <td>{{ work.block_num }}</td>
+                <td>{{ work.finished }}</td>
+                <td class="utc_time">{{ work.start_time }}</td>
+                <td class="fixed-font">
+                  {% if work.miner_wallet %}
+                  <a href="/miner/{{ work.miner_wallet }}">{{ work.miner_wallet and (work.miner_wallet[:8] + "...") }}</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
           </tbody>
         </table>
         </div>
@@ -49,4 +75,32 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block script %}
+<script src="https://unpkg.com/dayjs@1.7.8/dayjs.min.js"></script>
+<script src="https://unpkg.com/dayjs@1.7.8/plugin/relativeTime.js"></script>
+<script>
+// dayjs.extend(dayjs_plugin_relativeTime);
+$(document).ready(function() {
+  let $utc = $(".utc_time");
+  $utc.each(function () {
+    try {
+      let utc_time = dayjs($(this).text());
+      $(this).text(utc_time.format("YYYY-MM-DD HH:mm:ss"));
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
+  $(".hashrate").each(function () {
+    try {
+      let hashrate = $(this).text();
+      $(this).text(covert_hashrate(hashrate, 1) + "/s");
+    } catch (err) {
+      console.log(err);
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -129,10 +129,12 @@ def node_stats(pub_key: str):
     node = zilnode.ZilNode.get_by_pub_key(pub_key, authorized=None)
     if node:
         working_q = Q(expire_time__gte=datetime.utcnow()) & Q(finished=False)
+        latest_works = pow.PowWork.get_node_works(pub_key=node.pub_key, count=6)
         return {
             "pub_key": node.pub_key,
             "pow_fee": node.pow_fee,
             "authorized": node.authorized,
+            "latest_works": latest_works,
             "works": node.works_stats(),
         }
 
