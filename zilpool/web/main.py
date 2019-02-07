@@ -78,9 +78,9 @@ def init_web_handlers(app, config):
 
         miner = stats.miner_stats(address)
         if miner:
-            miner["workers"] = [
-                stats.worker_stats(address, worker_name)
-                for worker_name in miner["workers"]
+            miner["workers_stats"] = [
+                stats.worker_stats(address, worker_name, hashrate=False)
+                for worker_name in miner["workers"][:100]
             ]
 
         resp = {

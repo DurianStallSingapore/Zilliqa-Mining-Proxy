@@ -157,22 +157,24 @@ def miner_stats(wallet_address: str):
         }
 
 
-def worker_stats(wallet_address: str, worker_name: str):
+def worker_stats(wallet_address: str, worker_name: str, hashrate=True):
     worker = miner.Worker.get(wallet_address=wallet_address,
                               worker_name=worker_name)
     if worker:
         last_work = pow.PowResult.get(miner_wallet=wallet_address,
                                       worker_name=worker_name,
                                       order="-finished_time")
-        return {
+        stats = {
             "miner": wallet_address,
             "worker_name": worker.worker_name,
             "last_finished_time": utils.iso_format(last_work and last_work.finished_time),
-            "hashrate": miner.HashRate.epoch_hashrate(
-                wallet_address=wallet_address, worker_name=worker.worker_name
-            ),
             "works": worker.works_stats(),
         }
+        if hashrate:
+            stats["hashrate"] = miner.HashRate.epoch_hashrate(
+                wallet_address=wallet_address, worker_name=worker.worker_name
+            )
+        return stats
 
 
 def hashrate_stats(block_num=None, wallet_address=None, worker_name=None):
