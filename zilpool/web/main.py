@@ -37,7 +37,8 @@ TEMPLATE_DIR = os.path.join(CUR_DIR, "template")
 def init_web_handlers(app, config):
     root_path = config["api_server"]["website"].get("path", "/")
 
-    aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
+    jinja2_env = aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
+    jinja2_env.globals["utils"] = utils
 
     # add handles
     app.router.add_static(f"{root_path}static", STATIC_DIR)
