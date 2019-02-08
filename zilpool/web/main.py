@@ -48,7 +48,7 @@ def init_web_handlers(app, config):
         return {
             "config": config,
             "summary": stats.summary(),
-            "current": stats.current_work(),
+            "current": stats.current_work(config),
         }
     app.router.add_route("GET", root_path, index)
 
@@ -141,7 +141,7 @@ def init_web_handlers(app, config):
                 "visa": admin.visa_without_ext_data,
                 "expire_at": admin.visa_expire_time,
                 "summary": stats.summary(),
-                "current": stats.current_work(),
+                "current": stats.current_work(config),
                 "per_page": 20,
             })
 

@@ -47,6 +47,11 @@ def init_apis(config):
             logging.warning(f"failed verify signature")
             return False
 
+        if config["zilliqa"]["enabled"]:
+            # 0. check network info
+            if not utils.Zilliqa.is_pow_window():
+                return False
+
         block_num = crypto.hex_str_to_int(block_num)
         timeout = crypto.hex_str_to_int(timeout)
 

@@ -24,8 +24,7 @@ from mongoengine import Q
 
 import zilpool
 from zilpool.common import utils
-from zilpool.pyzil import crypto
-from zilpool.pyzil import ethash
+from zilpool.pyzil import crypto, ethash
 from zilpool.database import pow, miner, zilnode
 
 
@@ -36,7 +35,7 @@ def init_apis(config):
 
     @method
     async def stats_current(request):
-        return current_work()
+        return current_work(config)
 
     @method
     @utils.args_to_lower
@@ -98,12 +97,14 @@ def summary():
     }
 
 
-def current_work():
+def current_work(config):
     latest_work = pow.PowWork.get_latest_work()
 
     block_num = 0
+    tx_block_num = None
     difficulty = [0, 0]
     start_time = None
+
     if latest_work:
         block_num = latest_work.block_num
         start_time = latest_work.start_time
@@ -111,10 +112,19 @@ def current_work():
 
     now = datetime.utcnow()
     secs_next_pow = pow.PoWWindow.seconds_to_next_pow()
+
+    if config["zilliqa"]["enabled"]:
+        block_num = utils.Zilliqa.get_current_dsblock()
+        tx_block_num = utils.Zilliqa.get_current_txblock()
+        difficulty = utils.Zilliqa.get_difficulty()
+        difficulty = [ethash.difficulty_to_hashpower(d) for d in difficulty]
+        secs_next_pow = utils.Zilliqa.secs_to_next_pow()
+
     next_pow_time = now + timedelta(seconds=secs_next_pow)
 
     return {
         "block_num": block_num,
+        "tx_block_num": tx_block_num,
         "difficulty": difficulty,
         "utc_time": utils.iso_format(now),
         "start_time": utils.iso_format(start_time),

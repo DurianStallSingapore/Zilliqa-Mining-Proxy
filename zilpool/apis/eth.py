@@ -34,7 +34,10 @@ def init_apis(config):
     )
 
     def no_work():
-        seconds_to_next_pow = pow.PoWWindow.seconds_to_next_pow()
+        if config["zilliqa"]["enabled"]:
+            seconds_to_next_pow = utils.Zilliqa.secs_to_next_pow()
+        else:
+            seconds_to_next_pow = pow.PoWWindow.seconds_to_next_pow()
         return "", "", "", False, int(seconds_to_next_pow)
 
     @method

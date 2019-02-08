@@ -28,6 +28,8 @@ from aiohttp import web
 from jsonrpcserver import async_dispatch
 from jsonrpcserver.response import ExceptionResponse
 
+from zilpool import backgound
+
 
 # setup root logger
 FORMATTER = logging.Formatter(
@@ -138,10 +140,18 @@ def start_servers(conf_file=None, host=None, port=None):
     connect_to_db(config)
     init_db(config)
 
+    # init Zilliqa network APIs
+    utils.Zilliqa.init(config)
+
     # init app
     app = web.Application(debug=config["debug"])
     init_apis(app, config)
     init_website(app, config)
+
+    # start background tasks
+    app["config"] = config
+    app.on_startup.append(backgound.start_background_tasks)
+    app.on_cleanup.append(backgound.cleanup_background_tasks)
 
     # start the server
     if port is None:

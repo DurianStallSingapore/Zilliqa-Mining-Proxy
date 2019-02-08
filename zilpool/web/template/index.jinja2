@@ -29,8 +29,12 @@
             <table class="table table-hover text-left">
               <tbody>
                 <tr>
-                  <th scope="row">Current DS Block</th>
-                  <td>{{ current.block_num }}</td>
+                  <th scope="row">Current Block</th>
+                  <td>{{ current.block_num }}
+                    {% if current.tx_block_num %}
+                      / {{ current.tx_block_num }}
+                    {% endif %}
+                  </td>
                 </tr>
                 <tr>
                   <th scope="row">Next PoW Time</th>
@@ -163,10 +167,14 @@
 <script>
   function update_pow_time(str_pow_time) {
     const pow_time = dayjs(str_pow_time);
-    const mins = pow_time.diff(dayjs(), "minute");
-    var pow_msg = "PoW is running";
-    if (mins > 0) {
-        pow_msg = mins.toString() + " mins later";
+    const seconds = pow_time.diff(dayjs(), "second");
+    let pow_msg = "PoW is running";
+    if (seconds > 0 ) {
+      if (seconds > 60) {
+        pow_msg = (seconds / 60).toFixed(0).toString() + " mins later";
+      } else {
+        pow_msg = "Less than 1 min";
+      }
     }
     $("#next_pow_time").text(pow_msg);
   }
