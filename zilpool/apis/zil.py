@@ -21,7 +21,7 @@ from datetime import datetime
 from jsonrpcserver import method
 
 from zilpool.common import utils
-from zilpool.pyzil import crypto
+from zilpool.pyzil import crypto, ethash
 from zilpool.database import pow, zilnode
 
 
@@ -58,6 +58,14 @@ def init_apis(config):
             if block_num < network_ds_block:
                 return False
             if block_num > network_ds_block + 1:
+                return False
+
+            difficulty = ethash.boundary_to_difficulty(boundary)
+            network_difficulty = [
+                utils.Zilliqa.shard_difficulty,
+                utils.Zilliqa.ds_difficulty
+            ]
+            if difficulty not in network_difficulty:
                 return False
 
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
