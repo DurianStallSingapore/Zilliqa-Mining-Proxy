@@ -114,9 +114,9 @@ def current_work(config):
     secs_next_pow = pow.PoWWindow.seconds_to_next_pow()
 
     if config["zilliqa"]["enabled"]:
-        block_num = utils.Zilliqa.get_current_dsblock()
-        tx_block_num = utils.Zilliqa.get_current_txblock()
-        difficulty = utils.Zilliqa.get_difficulty()
+        block_num = utils.Zilliqa.cur_ds_block
+        tx_block_num = utils.Zilliqa.cur_tx_block
+        difficulty = (utils.Zilliqa.shard_difficulty, utils.Zilliqa.ds_difficulty)
         difficulty = [ethash.difficulty_to_hashpower(d) for d in difficulty]
         secs_next_pow = utils.Zilliqa.secs_to_next_pow()
 

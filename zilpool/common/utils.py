@@ -20,6 +20,7 @@ import os
 import re
 import yaml
 import hashlib
+import asyncio
 from collections import Mapping
 from functools import wraps
 from cachetools import TTLCache
@@ -223,24 +224,25 @@ def run_in_thread(func):
 class Zilliqa:
     conf = None
     api = None
-    cache = TTLCache(maxsize=64, ttl=30)
+    cache = None
 
     cur_tx_block = 0
     cur_ds_block = 0
     shard_difficulty = 0
     ds_difficulty = 0
-    avg_block_time = 25    # from constants.xml
+    avg_block_time = 90
 
     @classmethod
     def init(cls, conf):
         cls.conf = conf["zilliqa"]
         cls.api = zilliqa_api.API(cls.conf["api_endpoint"])
+        cls.cache = TTLCache(maxsize=64, ttl=cls.conf["update_interval"])
 
     @classmethod
-    def get_cache(cls, key, func, *args, **kwargs):
+    async def get_cache(cls, key, func, *args, **kwargs):
         val = cls.cache.get(key)
         if val is None:
-            val = func(*args, **kwargs)
+            val = await func(*args, **kwargs)
             try:
                 cls.cache[key] = val
             except KeyError:
@@ -259,8 +261,8 @@ class Zilliqa:
         cls.avg_block_time = avg_time
 
     @classmethod
-    def get_current_txblock(cls):
-        block = cls.get_cache("txblock", cls.api.GetCurrentMiniEpoch)
+    async def get_current_txblock(cls):
+        block = await cls.get_cache("txblock", cls.api.GetCurrentMiniEpoch)
         block = int(block or 0)
         if block > cls.cur_tx_block:
             cls.cur_tx_block = block
@@ -268,30 +270,35 @@ class Zilliqa:
         return block
 
     @classmethod
-    def get_current_dsblock(cls):
-        block = cls.get_cache("dsblock", cls.api.GetCurrentDSEpoch)
+    async def get_current_dsblock(cls):
+        block = await cls.get_cache("dsblock", cls.api.GetCurrentDSEpoch)
         block = int(block or 0)
         if block > cls.cur_ds_block:
             cls.cur_ds_block = block
         return block
 
     @classmethod
-    def get_difficulty(cls):
-        shard_difficulty = cls.get_cache("shard_difficulty",
-                                         cls.api.GetPrevDifficulty)
-        ds_difficulty = cls.get_cache("ds_difficulty",
-                                      cls.api.GetPrevDSDifficulty)
+    async def get_difficulty(cls):
+        shard_difficulty = await cls.get_cache("shard_difficulty",
+                                               cls.api.GetPrevDifficulty)
 
         if shard_difficulty:
             cls.shard_difficulty = shard_difficulty
+        return shard_difficulty
+
+    @classmethod
+    async def get_ds_difficulty(cls):
+        ds_difficulty = await cls.get_cache("ds_difficulty",
+                                            cls.api.GetPrevDSDifficulty)
+
         if ds_difficulty:
             cls.ds_difficulty = ds_difficulty
-        return shard_difficulty, ds_difficulty
+        return ds_difficulty
 
     @classmethod
     def is_pow_window(cls):
         if not cls.cur_tx_block:
-            cls.get_current_txblock()
+            return False
 
         tx_block = cls.cur_tx_block
         block_per_pow = cls.conf["block_per_pow"]
@@ -301,7 +308,7 @@ class Zilliqa:
     @classmethod
     def secs_to_next_pow(cls):
         if not cls.cur_tx_block:
-            cls.get_current_txblock()
+            return 0
 
         tx_block = cls.cur_tx_block
         block_per_pow = cls.conf["block_per_pow"]
@@ -309,3 +316,15 @@ class Zilliqa:
         if block_in_epoch == 0:
             return 0    # current pow is running
         return (block_per_pow - block_in_epoch) * cls.avg_block_time
+
+    @classmethod
+    async def update_chain_info(cls):
+        tasks = [
+            cls.get_current_txblock(),
+            cls.get_current_dsblock(),
+            cls.get_difficulty(),
+            cls.get_ds_difficulty(),
+        ]
+
+        await asyncio.wait(tasks)
+

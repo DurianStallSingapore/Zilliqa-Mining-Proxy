@@ -27,42 +27,14 @@ from zilpool.pyzil.zilliqa_api import APIError
 
 async def update_chain_info(config):
     try:
-        prev_block = None
-        prev_time = None
-        latest_blocks_time = []
         while True:
             try:
-                cur_block = utils.Zilliqa.get_current_txblock()
-                if cur_block:
-                    if prev_block is None:
-                        prev_block = cur_block
-                        prev_time = time.time()
-                    else:
-                        if cur_block < prev_block:
-                            utils.Zilliqa.clear_cache()
-                            continue
-
-                        if cur_block > prev_block:
-                            blocks = cur_block - prev_block
-                            now = time.time()
-
-                            elapsed = now - prev_time
-                            block_time = elapsed / blocks
-                            latest_blocks_time.append(block_time)
-
-                            avg_time = sum(latest_blocks_time) / len(latest_blocks_time)
-                            utils.Zilliqa.update_avg_block_time(avg_time)
-
-                            prev_block = cur_block
-                            prev_time = now
-
-                            if len(latest_blocks_time) > 50:
-                                latest_blocks_time = latest_blocks_time[25:]
-
+                await utils.Zilliqa.update_chain_info()
             except APIError as e:
                 logging.error(f"APIError {e}")
 
             await asyncio.sleep(config["zilliqa"]["update_interval"])
+
     except asyncio.CancelledError:
         pass
     except:

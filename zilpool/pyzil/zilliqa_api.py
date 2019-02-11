@@ -38,14 +38,14 @@ class API:
             self.api = api
             self.method_name = method_name
 
-        def __call__(self, *params, **kwargs):
-            resp = self.api.call(self.method_name, *params, **kwargs)
+        async def __call__(self, *params, **kwargs):
+            resp = await self.api.call(self.method_name, *params, **kwargs)
             return resp and resp.data and resp.data.result
 
     def __init__(self, endpoint):
         self.endpoint = endpoint
 
-        self.loop = asyncio.new_event_loop()
+        self.loop = asyncio.get_event_loop()
         self.session = ClientSession(loop=self.loop)
         self.api_client = AiohttpClient(
             self.session,
@@ -59,31 +59,21 @@ class API:
     def __del__(self):
         self.loop.run_until_complete(self.session.close())
 
-    def call(self, method, *params, **kwargs):
-        resp = [None]
-
-        def _thread_call():
-            resp[0] = self.loop.run_until_complete(
-                self.api_client.request(
-                    method, params,
-                    trim_log_values=True, **kwargs
-                )
-            )
-        th = threading.Thread(target=_thread_call)
-        th.start()
-        th.join()
-
-        return resp[0]
+    async def call(self, method, *params, **kwargs):
+        return await self.api_client.request(
+            method, params,
+            trim_log_values=True, **kwargs
+        )
 
 
 if "__main__" == __name__:
     loop = asyncio.get_event_loop()
 
     api = API("https://api.zilliqa.com/")
-    block = api.GetCurrentMiniEpoch()
+    block = loop.run_until_complete(api.GetCurrentMiniEpoch())
     print(block)
-    block = api.GetCurrentDSEpoch()
+    block = loop.run_until_complete(api.GetCurrentDSEpoch())
     print(block)
-    block = api.GetCurrentMiniEpoch()
+    block = loop.run_until_complete(api.GetCurrentMiniEpoch())
     print(block)
 
