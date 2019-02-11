@@ -301,7 +301,7 @@ class Zilliqa:
             return False
 
         tx_block = cls.cur_tx_block
-        block_per_pow = cls.conf["block_per_pow"]
+        block_per_pow = cls.conf["BLOCK_PER_POW"]
         block_in_epoch = tx_block % block_per_pow
         return block_in_epoch in [0, block_per_pow - 1]
 
@@ -311,7 +311,7 @@ class Zilliqa:
             return 0
 
         tx_block = cls.cur_tx_block
-        block_per_pow = cls.conf["block_per_pow"]
+        block_per_pow = cls.conf["BLOCK_PER_POW"]
         block_in_epoch = tx_block % block_per_pow
         if block_in_epoch == 0:
             return 0    # current pow is running

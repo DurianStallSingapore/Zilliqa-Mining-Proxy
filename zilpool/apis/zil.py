@@ -28,6 +28,34 @@ from zilpool.database import pow, zilnode
 def init_apis(config):
     zil_config = config["api_server"]["zil"]
 
+    def check_network_info(block_num, boundary, timeout):
+        if not utils.Zilliqa.is_pow_window():
+            logging.warning(f"The network is not in pow window")
+            return False
+
+        network_ds_block = utils.Zilliqa.cur_ds_block
+        if block_num < network_ds_block:
+            logging.warning(f"Got wrong block number: {block_num} < {network_ds_block}")
+            return False
+        if block_num > network_ds_block + 1:
+            logging.warning(f"Got wrong block number: {block_num} > {network_ds_block} + 1")
+            return False
+
+        difficulty = ethash.boundary_to_difficulty(boundary)
+        network_difficulty = [
+            utils.Zilliqa.shard_difficulty,
+            utils.Zilliqa.ds_difficulty
+        ]
+        if difficulty not in network_difficulty:
+            logging.warning("Got wrong difficulty {difficulty}")
+            return False
+
+        if timeout > config["zilliqa"]["POW_WINDOW_IN_SECONDS"]:
+            logging.warning("Got wrong timeout {timeout}")
+            return False
+
+        return True
+
     @method
     @utils.args_to_lower
     async def zil_requestWork(request,
@@ -52,20 +80,8 @@ def init_apis(config):
 
         if config["zilliqa"]["enabled"]:
             # 0. check network info
-            if not utils.Zilliqa.is_pow_window():
-                return False
-            network_ds_block = utils.Zilliqa.cur_ds_block
-            if block_num < network_ds_block:
-                return False
-            if block_num > network_ds_block + 1:
-                return False
-
-            difficulty = ethash.boundary_to_difficulty(boundary)
-            network_difficulty = [
-                utils.Zilliqa.shard_difficulty,
-                utils.Zilliqa.ds_difficulty
-            ]
-            if difficulty not in network_difficulty:
+            if not check_network_info(block_num, boundary, timeout):
+                logging.warning(f"Invalid PoW request from {pub_key}")
                 return False
 
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
