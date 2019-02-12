@@ -190,7 +190,7 @@ class PowWork(ModelMixin, mg.Document):
         if max_dispatch is not None:
             query = query & Q(dispatched__lt=max_dispatch)
 
-        cursor = cls.objects(query).order_by("-pow_fee", "expire_time", "dispatched")
+        cursor = cls.objects(query).order_by("-boundary", "-pow_fee", "expire_time", "dispatched")
         works = cursor.limit(count).all()
         if count == 1:
             return works[0] if works else None
