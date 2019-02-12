@@ -168,7 +168,7 @@ class PowWork(ModelMixin, mg.Document):
     meta = {"collection": "zil_pow_works"}
 
     def __str__(self):
-        return f"[PowWork: {self.header}, {self.finished}, {self.expire_time}]"
+        return f"[PowWork: {self.header}, {self.finished}, {self.start_time}]"
 
     @classmethod
     def new_work(cls, header: str, block_num: int, boundary: str,
@@ -190,7 +190,7 @@ class PowWork(ModelMixin, mg.Document):
         if max_dispatch is not None:
             query = query & Q(dispatched__lt=max_dispatch)
 
-        cursor = cls.objects(query).order_by("-boundary", "-pow_fee", "expire_time", "dispatched")
+        cursor = cls.objects(query).order_by("-boundary", "-pow_fee", "start_time", "dispatched")
         works = cursor.limit(count).all()
         if count == 1:
             return works[0] if works else None
@@ -198,7 +198,7 @@ class PowWork(ModelMixin, mg.Document):
 
     @classmethod
     def find_work_by_header_boundary(cls, header: str, boundary="",
-                                     check_expired=True, order="expire_time"):
+                                     check_expired=True, order="start_time"):
         query = Q(header=header)
         if boundary:
             query = query & Q(boundary=boundary)
@@ -218,7 +218,7 @@ class PowWork(ModelMixin, mg.Document):
         return first_work.block_num if first_work else -1
 
     @classmethod
-    def get_latest_work(cls, block_num=None, order="-expire_time"):
+    def get_latest_work(cls, block_num=None, order="-start_time"):
         if block_num is None:
             cursor = cls.objects()
         else:

@@ -18,6 +18,7 @@
 
 import logging
 from typing import List, Tuple
+from datetime import timedelta
 from jsonrpcserver import method
 
 from zilpool.common import utils
@@ -58,6 +59,12 @@ def init_apis(config):
                 logging.critical(f"Work dispatched, {work.header} - {work.boundary}")
             elif work.dispatched >= max_dispatch:
                 logging.error(f"max dispatched exceeded {work.dispatched}, {work.header} - {work.boundary}")
+                # reset dispatched and increase start_time to retry
+                delta = work.expire_time - work.start_time
+                if delta > timedelta(seconds=1):
+                    logging.critical(f"reset dispatched to retry, {work.header} - {work.boundary}")
+                    new_start_time = work.start_time + delta / 3
+                    work.update(dispatched=0, start_time=new_start_time)
 
             return work.header, work.seed, work.boundary, True, 0
 
