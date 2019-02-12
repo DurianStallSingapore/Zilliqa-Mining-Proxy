@@ -54,7 +54,13 @@ def init_apis(config):
             return no_work()
 
         if work.increase_dispatched(inc_expire_seconds=inc_expire):
+            if work.dispatched == 1:
+                logging.critical(f"Work dispatched, {work.header} - {work.boundary}")
+            elif work.dispatched >= max_dispatch:
+                logging.error(f"max dispatched exceeded {work.dispatched}, {work.header} - {work.boundary}")
+
             return work.header, work.seed, work.boundary, True, 0
+
         logging.warning(f"increase_dispatched failed, {work}")
         return no_work()
 
@@ -110,12 +116,12 @@ def init_apis(config):
             prev_result = pow.PowResult.get_pow_result(work.header, work.boundary)
             if prev_result:
                 if prev_result.verified:
-                    logging.warning(f"submitted too late, work is verified. {work.header} {work.boundary}")
+                    logging.info(f"submitted too late, work is verified. {work.header} {work.boundary}")
                     _worker.update_stat(inc_failed=1)
                     return False
 
                 if ethash.is_less_or_equal(prev_result.hash_result, hash_result):
-                    logging.warning(f"submitted result > old result, ignored. {work.header} {work.boundary}")
+                    logging.info(f"submitted result > old result, ignored. {work.header} {work.boundary}")
                     _worker.update_stat(inc_failed=1)
                     return False
 
@@ -125,6 +131,8 @@ def init_apis(config):
             logging.warning(f"failed to save result for miner "
                             f"{miner_wallet}-{worker_name}, {work}")
             return False
+
+        logging.critical(f"Work submitted, {work.header} {work.boundary}")
 
         _worker.update_stat(inc_finished=1)
 

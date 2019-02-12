@@ -95,6 +95,8 @@ def init_apis(config):
         # update pow window
         pow.PoWWindow.update_pow_window(work)
 
+        logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
+
         return work is not None
 
     work_not_done = (False, "", "", "")
@@ -118,9 +120,11 @@ def init_apis(config):
         pow_result = pow.PowResult.get_pow_result(header, boundary, pub_key=pub_key)
 
         if not pow_result:
-            logging.warning(f"result not found for pub_key: {pub_key}, "
-                            f"header: {header}, boundary: {boundary}")
+            logging.info(f"result not found for pub_key: {pub_key}, "
+                         f"header: {header}, boundary: {boundary}")
             return work_not_done
+
+        logging.critical(f"PoW result found, header: {header}, boundary: {boundary}")
 
         return True, pow_result.nonce, pow_result.header, pow_result.mix_digest
 
@@ -157,6 +161,9 @@ def init_apis(config):
                                 f"@{pow_result.miner_wallet}")
             else:
                 worker.update_stat(inc_verified=1)
+
+            logging.critical(f"PoW result verified by pub_key: {pub_key}, "
+                             f"header: {header}, boundary: {boundary}")
 
             return True
 
