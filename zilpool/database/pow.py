@@ -227,7 +227,7 @@ class PowWork(ModelMixin, mg.Document):
         return cursor.order_by(order).first()
 
     @classmethod
-    def get_node_works(cls, pub_key, count=1, order="-start_time"):
+    def get_node_works(cls, pub_key, count=1, order="-expire_time"):
         return cls.get(first=False, order=order, pub_key=pub_key)[:count]
 
     @classmethod
