@@ -328,3 +328,15 @@ class Zilliqa:
 
         await asyncio.wait(tasks)
 
+    @classmethod
+    async def get_balance(cls, address):
+        if address.startswith("0x"):
+            address = address[2:]
+        resp = await cls.get_cache(f"balance_{address}",
+                                   cls.api.GetBalance,
+                                   address)
+        if not resp:
+            return 0.0
+
+        balance = int(resp["balance"])
+        return balance / pow(10, 12)

@@ -61,7 +61,7 @@ class API:
 
     async def call(self, method, *params, **kwargs):
         return await self.api_client.request(
-            method, params,
+            method, *params,
             trim_log_values=True, **kwargs
         )
 
@@ -76,4 +76,7 @@ if "__main__" == __name__:
     print(block)
     block = loop.run_until_complete(api.GetCurrentMiniEpoch())
     print(block)
+
+    balance = loop.run_until_complete(api.GetBalance("0123456789012345678901234567890123456789"))
+    print(balance)
 
