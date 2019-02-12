@@ -66,7 +66,10 @@ def difficulty_to_boundary(difficulty: int) -> bytes:
     return bytes(boundary)
 
 
-def boundary_to_difficulty(boundary: bytes) -> int:
+def boundary_to_difficulty(boundary) -> int:
+    if isinstance(boundary, str):
+        boundary = crypto.hex_str_to_bytes(boundary)
+
     difficulty = 0
     for b in memoryview(boundary):
         if b == 0:

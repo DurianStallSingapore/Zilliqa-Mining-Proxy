@@ -47,11 +47,11 @@ def init_apis(config):
             utils.Zilliqa.ds_difficulty
         ]
         if difficulty not in network_difficulty:
-            logging.warning("Got wrong difficulty {difficulty}")
+            logging.warning(f"Got wrong difficulty {difficulty}")
             return False
 
         if timeout > config["zilliqa"]["POW_WINDOW_IN_SECONDS"]:
-            logging.warning("Got wrong timeout {timeout}")
+            logging.warning(f"Got wrong timeout {timeout}")
             return False
 
         return True
