@@ -87,6 +87,15 @@
           </div>
           <div class="tab-pane fade" id="miners" role="tabpanel" aria-labelledby="miners-tab">
             <!-- Miners -->
+            <form class="form-inline mt-3">
+              <div class="col-lg-6 col-sm-6">
+                <input id="miner_email_or_addr" type="text" class="w-100 form-control"
+                       placeholder="Miner Email or Address">
+              </div>
+              <div class="col-lg-1 col-sm-1">
+                <a class="btn btn-warning" href="javascript:miners_query(0);">Show</a>
+              </div>
+            </form>
             <table class="table table-hover table-bordered mt-3">
               <thead class="bg-warning text-white">
                 <tr>
@@ -110,6 +119,15 @@
           </div>
           <div class="tab-pane fade" id="nodes" role="tabpanel" aria-labelledby="nodes-tab">
             <!-- Nodes -->
+            <form class="form-inline mt-3">
+              <div class="col-lg-8 col-sm-8">
+                <input id="node_email_or_key" type="text" class="w-100 form-control"
+                       placeholder="Node Email or Public Key">
+              </div>
+              <div class="col-lg-1 col-sm-1">
+                <a class="btn btn-secondary" href="javascript:nodes_query(0);">Show</a>
+              </div>
+            </form>
             <table class="table table-hover table-bordered mt-3">
               <thead class="bg-dark text-white">
                 <tr>
@@ -301,8 +319,23 @@ function miners_callback(result, action) {
 
 function miners_query(page) {
   miner_cur_page = page;
+  let order_by = null;
+  let filters = null;
+
+  let search_str = $.trim($("#miner_email_or_addr").val());
+
+  if (search_str.length > 0) {
+    let valid_address = valid_hex_str(search_str, 42);
+    if (valid_address) {
+      filters = {wallet_address: valid_address};
+    } else {
+      filters = {email: search_str};
+    }
+  }
+
   // query and show miners
-  admin_api("admin_list_miners", miners_callback, miner_cur_page, per_page);
+  admin_api("admin_list_miners", miners_callback, miner_cur_page, per_page,
+            order_by, filters);
 }
 
 /****************
@@ -407,8 +440,22 @@ function nodes_callback(result, action) {
 
 function nodes_query(page) {
   nodes_cur_page = page;
+  let order_by = null;
+  let filters = null;
+
+  let search_str = $.trim($("#node_email_or_key").val());
+
+  if (search_str.length > 0) {
+    let valid_pub_key = valid_hex_str(search_str, 68);
+    if (valid_pub_key) {
+      filters = {pub_key: valid_pub_key};
+    } else {
+      filters = {email: search_str};
+    }
+  }
   // query and show nodes
-  admin_api("admin_list_nodes", nodes_callback, nodes_cur_page, per_page);
+  admin_api("admin_list_nodes", nodes_callback, nodes_cur_page, per_page,
+            order_by, filters);
 }
 
 /****************
@@ -538,8 +585,20 @@ $(document).ready(function() {
   });
 
   miners_query(0);
+  $("#miner_email_or_addr").keydown(function(event){
+    if (event.which == 13) {
+      event.preventDefault();
+      miners_query(0);
+    }
+  });
 
   nodes_query(0);
+  $("#node_email_or_key").keydown(function(event){
+    if (event.which == 13) {
+      event.preventDefault();
+      nodes_query(0);
+    }
+  });
 
   rewards_query(0);
 });

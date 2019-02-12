@@ -132,8 +132,13 @@ def init_apis(config):
         }
 
     @method
-    async def admin_list_miners(request, visa: str, page=0, per_page=50, order_by="-work_finished"):
+    async def admin_list_miners(request, visa: str, page=0, per_page=50,
+                                order_by=None, filters=None):
         admin = get_admin_from_visa(request, visa)
+        if order_by is None:
+            order_by = "-work_finished"
+        if filters is None:
+            filters = {}
         return [
             {
                 "email": m.email,
@@ -147,12 +152,19 @@ def init_apis(config):
                 "workers": m.workers_name,
                 "works": m.works_stats(),
             }
-            for m in Miner.paginate(page=page, per_page=per_page, order_by=order_by)
+            for m in Miner.paginate(page=page, per_page=per_page,
+                                    order_by=order_by, **filters)
         ]
 
     @method
-    async def admin_list_nodes(request, visa: str, page=0, per_page=50, order_by="authorized, email"):
+    async def admin_list_nodes(request, visa: str, page=0, per_page=50,
+                               order_by=None, filters=None):
         admin = get_admin_from_visa(request, visa)
+        if order_by is None:
+            order_by = ["authorized", "email"]
+        if filters is None:
+            filters = {}
+
         return [
             {
                 "email": node.email,
@@ -161,7 +173,8 @@ def init_apis(config):
                 "pub_key": node.pub_key,
                 "works": node.works_stats()
             }
-            for node in ZilNode.paginate(page=page, per_page=per_page, order_by=order_by)
+            for node in ZilNode.paginate(page=page, per_page=per_page,
+                                         order_by=order_by, **filters)
         ]
 
     @method
