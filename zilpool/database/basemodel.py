@@ -84,8 +84,14 @@ class ModelMixin:
         return cls.objects(**kwargs)
 
     @classmethod
-    def paginate(cls, page=0, per_page=50, **kwargs):
+    def paginate(cls, page=0, per_page=50, order_by=None, **kwargs):
         query = cls.query(**kwargs)
+        if order_by is not None:
+            if isinstance(order_by, str):
+                order_by = order_by.split(",")
+            if not isinstance(order_by, (list, tuple)):
+                order_by = (order_by, )
+            query = query.order_by(*order_by)
         return query.skip(page * per_page).limit(per_page).all()
 
     @classmethod
