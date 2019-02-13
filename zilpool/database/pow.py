@@ -258,17 +258,25 @@ class PowWork(ModelMixin, mg.Document):
             for boundary in cls.query(block_num=block_num).distinct("boundary")
         ]
 
-    def increase_dispatched(self, count=1, inc_expire_seconds=0):
-        if inc_expire_seconds > 0:
-            new_expire_time = self.expire_time + timedelta(seconds=inc_expire_seconds)
-            res = self.update(inc__dispatched=count, set__expire_time=new_expire_time)
-        else:
-            res = self.update(inc__dispatched=count)
-
-        if res is None:
+    def increase_dispatched(self, max_dispatch, count=1, inc_seconds=0):
+        work = self.update(inc__dispatched=count)
+        if not work:
             return None
-        self.reload()
-        return self
+
+        if work.dispatched == 1:
+            # the first dispatch
+            logging.warning(f"Work dispatched, {work.header} - {work.boundary}")
+            return work
+
+        if work.dispatched >= max_dispatch:
+            new_start_time = work.start_time + timedelta(seconds=inc_seconds)
+            if new_start_time >= work.expire_time:
+                logging.error(f"max dispatched exceeded {work.dispatched}, {work.header} - {work.boundary}")
+            else:
+                logging.warning(f"reset dispatched to retry, {self.header} - {self.boundary}")
+                work = work.update(dispatched=1, start_time=new_start_time)
+
+        return work
 
     def save_result(self, nonce: str, mix_digest: str, hash_result: str,
                     miner_wallet: str, worker_name: str):
