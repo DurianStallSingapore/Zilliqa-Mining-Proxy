@@ -78,7 +78,7 @@ $(document).ready(function() {
     }
 
     jsonrpc(
-      "/api",
+      "{{ config.api_server.path }}",
       "admin_generate_password",
       [email],
       function (result) {

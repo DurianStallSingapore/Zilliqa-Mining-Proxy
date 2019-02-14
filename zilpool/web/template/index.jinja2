@@ -197,7 +197,7 @@
     }
 
     jsonrpc(
-      "/api",
+      "{{ config.api_server.path }}",
       "register_miner",
       [wallet_address, email, nickname],
       function (result) {
@@ -258,7 +258,7 @@
     let pub_keys = node_keys.join(",")
 
     jsonrpc(
-      "/api",
+      "{{ config.api_server.path }}",
       "register_node",
       [pub_keys, email],
       function (result) {
