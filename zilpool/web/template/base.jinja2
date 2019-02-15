@@ -1,3 +1,4 @@
+{% set root_path = config.api_server.website.path %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,21 +8,21 @@
     <meta name="author" content="">
     <title>{{ config.pool.title }}</title>
     <!-- Bootstrap core CSS -->
-    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ root_path }}static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom fonts for this template -->
-    <link href="/static/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
-    <link href="/static/vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet" type="text/css">
+    <link href="{{ root_path }}static/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="{{ root_path }}static/vendor/simple-line-icons/css/simple-line-icons.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic" rel="stylesheet" type="text/css">
     <!-- Custom styles for this template -->
-    <link href="/static/css/landing-page.min.css" rel="stylesheet">
-    <link href="/static/css/site.css" rel="stylesheet">
+    <link href="{{ root_path }}static/css/landing-page.min.css" rel="stylesheet">
+    <link href="{{ root_path }}static/css/site.css" rel="stylesheet">
     <style type="text/css">{% block css %}{% endblock %}</style>
   </head>
 
   <body>
     <!-- Navigation -->
     <nav class="navbar fixed-top">
-      <a class="navbar-brand zil_text" href="/">{{ config.pool.title }}</a>
+      <a class="navbar-brand zil_text" href="{{ root_path }}">{{ config.pool.title }}</a>
       <form class="form-inline flex-fill">
         <div class="col-lg-1"></div>
         <div class="col-lg-9 col-sm-9">
@@ -33,8 +34,8 @@
         </div>
       </form>
       <div>
-        <a class="btn btn-warning" href="/#start_mining">Start Mining</a>
-        <a class="btn btn btn-dark m-1" href="/#register_node">Register ZIL Node</a>
+        <a class="btn btn-warning" href="{{ root_path }}#start_mining">Start Mining</a>
+        <a class="btn btn btn-dark m-1" href="{{ root_path }}#register_node">Register ZIL Node</a>
         <a class="btn btn btn-primary" href="https://github.com/DurianStallSingapore/ZILMiner/releases">Download ZILMiner</a>
       </div>
       {% if config.site_settings.notification %}
@@ -56,7 +57,7 @@
         <div class="row">
           <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
             <p class="text-muted small mb-4 mb-lg-0">&copy; 2019 {{ config.pool.title }}. All Rights Reserved.
-            <a href="/admin"> Admin</a>
+            <a href="{{ root_path }}admin"> Admin</a>
             </p>
           </div>
           <div class="col-lg-6 h-100 text-center text-lg-right my-auto">
@@ -78,9 +79,9 @@
     </footer>
 
     <!-- Bootstrap core JavaScript -->
-    <script src="/static/vendor/jquery/jquery.min.js"></script>
-    <script src="/static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/script/site.js"></script>
+    <script src="{{ root_path }}static/vendor/jquery/jquery.min.js"></script>
+    <script src="{{ root_path }}static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ root_path }}static/script/site.js"></script>
     <script>
       $(document).ready(function() {
 
@@ -100,12 +101,12 @@
           // try address first
           let valid_address = valid_hex_str(search_str, 42);
           if (valid_address) {
-            window.location.href = "/miner/" + valid_address;
+            window.location.href = "{{ root_path }}miner/" + valid_address;
             return;
           }
           let valid_pub_key = valid_hex_str(search_str, 68);
           if (valid_pub_key) {
-            window.location.href = "/node/" + valid_pub_key;
+            window.location.href = "{{ root_path }}node/" + valid_pub_key;
             return;
           }
           $input.tooltip({

@@ -21,7 +21,7 @@
             <tr>
               <th scope="row">Miner Wallet</th>
               <td class="fixed-font">
-                <a href="/miner/{{ miner.wallet_address }}">{{ miner.wallet_address }}</a>
+                <a href="{{ root_path }}miner/{{ miner.wallet_address }}">{{ miner.wallet_address }}</a>
               </td>
             </tr>
             <tr>
@@ -91,7 +91,7 @@
             {% for worker in miner.workers_stats %}
             <tr>
               <th scope="row">
-                <a href="/miner/{{ miner.wallet_address }}.{{ worker.worker_name }}">{{ worker.worker_name }}</a>
+                <a href="{{ root_path }}miner/{{ miner.wallet_address }}.{{ worker.worker_name }}">{{ worker.worker_name }}</a>
               </th>
               <td class="">{{ worker.works.work_finished }}</td>
               <td class="">{{ worker.works.work_submitted }}</td>
@@ -101,7 +101,7 @@
             {% for worker_name in miner.workers[miner.workers_stats|length:] %}
             <tr>
               <th scope="row" colspan="5">
-                <a href="/miner/{{ miner.wallet_address }}.{{ worker_name }}">{{ worker_name }}</a>
+                <a href="{{ root_path }}miner/{{ miner.wallet_address }}.{{ worker_name }}">{{ worker_name }}</a>
               </th>
             </tr>
             {% endfor %}

@@ -173,7 +173,7 @@
             </nav>
             <div class="card-body text-left">
               <h6 class="card-subtitle mb-2">Export Rewards</h6>
-              <form target="_blank" method="post" action="/admin/export/rewards">
+              <form target="_blank" method="post" action="{{ root_path }}admin/export/rewards">
                 <div class="form-group row">
                   <label for="block_num" class="col-lg-2 col-form-label">Blocks</label>
                   <div class="col-lg-3 mb-2">
@@ -197,7 +197,7 @@
 {% endblock %}
 
 {% block script %}
-<script src="/static/vendor/bootstrap-notify.js"></script>
+<script src="{{ root_path }}static/vendor/bootstrap-notify.js"></script>
 <script>
 let visa = "{{ visa }}";
 
@@ -296,7 +296,7 @@ function show_miner_page(miners) {
     miner_num += 1;
     let miner_template = `<tr>
 <th scope="row">${miner_num}</th>
-<td class="fixed-font"><a href="/miner/${miner.wallet_address}" target="_blank">${miner.wallet_address}</a></td>
+<td class="fixed-font"><a href="{{ root_path }}miner/${miner.wallet_address}" target="_blank">${miner.wallet_address}</a></td>
 <td>${miner.email}</td>
 <td>${miner.workers.length}</td>
 <td>${miner.works.work_submitted}</td>
@@ -402,7 +402,7 @@ function show_nodes_page(nodes) {
     nodes_num += 1;
     let node_template = $(`<tr>
 <th scope="row">${nodes_num}</th>
-<td class="fixed-font"><a href="/node/${node.pub_key}" target="_blank">
+<td class="fixed-font"><a href="{{ root_path }}node/${node.pub_key}" target="_blank">
 ${node.pub_key}</a></td>
 <td>${node.email}</td>
 <td>${node.authorized}</td>
@@ -482,7 +482,7 @@ function show_rewards_page(rewards) {
         let reward_template = $(`<tr class="${c}">
           <th scope="row">${miner_reward.block_num}</th>
           <td>${miner_reward.date}</td>
-          <td class="fixed-font"><a href="/miner/${miner_reward.miner_wallet}" target="_blank">
+          <td class="fixed-font"><a href="{{ root_path }}miner/${miner_reward.miner_wallet}" target="_blank">
           ${miner_reward.miner_wallet}</a></td>
           <td>${miner_reward.rewards}</td>
           <td>${miner_reward.finished}</td>

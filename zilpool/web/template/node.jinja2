@@ -63,7 +63,7 @@
                 <td class="utc_time">{{ utils.iso_format(work.start_time) }}</td>
                 <td class="fixed-font">
                   {% if work.miner_wallet %}
-                  <a href="/miner/{{ work.miner_wallet }}">{{ work.miner_wallet and (work.miner_wallet[:8] + "...") }}</a>
+                  <a href="{{ root_path }}miner/{{ work.miner_wallet }}">{{ work.miner_wallet and (work.miner_wallet[:8] + "...") }}</a>
                   {% endif %}
                 </td>
               </tr>

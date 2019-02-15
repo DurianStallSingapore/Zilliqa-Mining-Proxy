@@ -36,6 +36,9 @@ TEMPLATE_DIR = os.path.join(CUR_DIR, "template")
 
 def init_web_handlers(app, config):
     root_path = config["api_server"]["website"].get("path", "/")
+    if not root_path.endswith("/"):
+        root_path += "/"
+    config["api_server"]["website"]["path"] = root_path
 
     jinja2_env = aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(TEMPLATE_DIR))
     jinja2_env.globals["utils"] = utils
@@ -51,6 +54,7 @@ def init_web_handlers(app, config):
             "current": stats.current_work(config),
         }
     app.router.add_route("GET", root_path, index)
+    app.router.add_route("GET", root_path[:-1], index)
 
     @aiohttp_jinja2.template("verify.jinja2")
     async def verify(request):
