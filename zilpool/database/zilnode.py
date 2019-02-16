@@ -88,12 +88,11 @@ class ZilNode(ModelMixin, mg.Document):
     @classmethod
     def active_count(cls):
         from . import pow
-        one_day = datetime.utcnow() - timedelta(days=1)
+
+        block_num = pow.PoWWindow.get_latest_block_num()
 
         match = {
-            "start_time": {
-                "$gte": one_day,
-            }
+            "block_num": block_num
         }
         group = {
             "_id": {"pub_key": "$pub_key"},
