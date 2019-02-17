@@ -1,4 +1,15 @@
 ########################################
+# request_pass
+POST http://localhost:4202/api
+Accept: application/json
+Cache-Control: no-cache
+
+{"id": 1, "jsonrpc": "2.0", "method": "request_pass", "params": [
+"deepgully@gmail.com"
+]}
+
+
+########################################
 # register_miner
 POST http://localhost:4202/api
 Accept: application/json
@@ -6,7 +17,8 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "register_miner", "params": [
 "0x7E377DBAF6EA1379A8004D059EF8E5729B57EADE",
-"deepgully@gmail.com"
+"deepgully@gmail.com",
+"passcode"
 ]}
 
 ########################################
@@ -18,7 +30,7 @@ Cache-Control: no-cache
 {"id": 1, "jsonrpc": "2.0", "method": "register_miner", "params": [
 "0x1FD76A1BEA7A41E3A47E7706E1E9A74087D3E217",
 "deepgully@gmail.com",
-"Gully Chen"
+"passcode"
 ]}
 
 
@@ -30,8 +42,10 @@ Cache-Control: no-cache
 
 {"id": 1, "jsonrpc": "2.0", "method": "register_node", "params": [
 "0x02d3c250564eb4fbe44878dedbc7b536799ff144f232bacfa926850f042dd7ec51",
-"deepgully@gmail.com"
+"deepgully@gmail.com",
+"A87myHXT6b2c1eb0"
 ]}
+
 
 ###
 

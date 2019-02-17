@@ -19,14 +19,14 @@
 from jsonrpcserver import method
 
 from zilpool.common import utils
-from zilpool.database import miner, zilnode
+from zilpool.database import miner, zilnode, ziladmin
 from zilpool.web import tools
 
 
 def init_apis(config):
     @method
-    async def register_miner(request, wallet_address: str, email: str, nick_name=""):
-        new_miner = miner_register(config, wallet_address, email, nick_name)
+    async def register_miner(request, wallet_address: str, email: str, pass_code: str):
+        new_miner = miner_register(config, wallet_address, email, pass_code)
         if not new_miner:
             return False
         resp = new_miner.to_mongo()
@@ -35,26 +35,36 @@ def init_apis(config):
         return resp
 
     @method
-    async def register_node(request, pub_key: str, email: str):
-        result = node_register(config, pub_key, email)
+    async def register_node(request, pub_key: str, email: str, pass_code: str):
+        result = node_register(config, pub_key, email, pass_code)
         return {
             "result": result
         }
 
+    @method
+    async def request_pass(request, email: str):
+        request_pass_code(config, email)
+        return True
 
-def miner_register(config, wallet_address, email, nick_name=""):
+
+def miner_register(config, wallet_address, email, pass_code):
     wallet_address = utils.valid_addr(wallet_address)
     assert wallet_address, "invalid wallet address"
 
     email = utils.valid_email(email)
     assert email, "invalid email"
 
+    # 0. verify pass code
+    success, msg = tools.verify_token(pass_code, action="verify_pass_code", email=email)
+    if not success:
+        raise Exception(msg)
+
     exist = miner.Miner.get(wallet_address=wallet_address)
     assert not exist, "wallet address exists already"
 
     new_miner = miner.Miner.get_or_create(
         wallet_address, "default_worker",
-        nick_name=nick_name, email=email,
+        email=email,
     )
     if not new_miner.email_verified:
         ext_data = {
@@ -66,7 +76,7 @@ def miner_register(config, wallet_address, email, nick_name=""):
     return new_miner
 
 
-def node_register(config, pub_key: str, email: str):
+def node_register(config, pub_key: str, email: str, pass_code: str):
     email = utils.valid_email(email)
     assert email, "invalid email"
 
@@ -80,6 +90,11 @@ def node_register(config, pub_key: str, email: str):
 
     if not pub_keys:
         raise Exception("no public key")
+
+    # 0. verify pass code
+    success, msg = tools.verify_token(pass_code, action="verify_pass_code", email=email)
+    if not success:
+        raise Exception(msg)
 
     # 1. get or create node owner
     owner = zilnode.ZilNodeOwner.get_one(email=email)
@@ -106,3 +121,17 @@ def node_register(config, pub_key: str, email: str):
     tools.send_approve_require_email(config, email, pub_keys)
 
     return True
+
+
+def request_pass_code(config, email: str):
+    action = "verify_pass_code"
+    expire_secs = 30 * 60
+    ext_data = {
+        "email": email
+    }
+
+    token = ziladmin.ZilAdminToken.create_token(action, ext_data=ext_data, expire_secs=expire_secs)
+    if not token:
+        raise Exception("Failed to generate pass code")
+
+    tools.send_pass_code(config, user_email=email, pass_code=token)

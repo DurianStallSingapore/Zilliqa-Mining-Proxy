@@ -115,12 +115,22 @@ def send_auth_notification_email(user_email, messages):
     )
 
 
-def verify_token(token, action):
+def send_pass_code(config, user_email, pass_code):
+    site_title = config["pool"]["title"]
+    subject = f"Pass Code on {site_title}"
+    messages = f"Your pass code is: {pass_code}.\n" \
+               f"It will be expired in 30 minutes."
+    EmailClient.send_admin_mail(
+        to_addrs=user_email, subject=subject, msg=messages
+    )
+
+
+def verify_token(token, action, *args, **kwargs):
     admin_token = ziladmin.ZilAdminToken.verify_token(token, action)
     if not admin_token:
         return False, "invalid or expired token"
 
     try:
-        return admin_token.do_action()
+        return admin_token.do_action(*args, **kwargs)
     except Exception as e:
         return False, str(e)

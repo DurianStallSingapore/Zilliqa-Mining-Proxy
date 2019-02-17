@@ -34,6 +34,7 @@ AdminActions = [
     "verify_owner_email",
     "approve_nodes",
     "reject_nodes",
+    "verify_pass_code",
 ]
 
 
@@ -95,11 +96,11 @@ class ZilAdminToken(ModelMixin, mg.Document):
         if not self.save():
             logging.error("database error, failed to save admin token")
 
-    def do_action(self):
+    def do_action(self, *args, **kwargs):
         action_func = getattr(self, self.action)
         if not callable(action_func):
             raise NotImplementedError
-        return action_func()
+        return action_func(*args, **kwargs)
 
     def verify_miner_email(self):
         from .miner import Miner
@@ -135,6 +136,13 @@ class ZilAdminToken(ModelMixin, mg.Document):
         self.set_token_done()
 
         return True, f"Node email {email} was verified"
+
+    def verify_pass_code(self, email):
+        if email != self.ext_data["email"]:
+            raise Exception("invalid pass code")
+
+        self.set_token_done()
+        return True, "pass code verified"
 
     def authorize_nodes(self, authorized=True):
         from .zilnode import ZilNode
