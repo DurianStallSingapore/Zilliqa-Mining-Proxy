@@ -136,10 +136,14 @@
               <label>Public Keys(one line per node):</label>
               <textarea id="node_pub_keys" class="form-control fixed-font" rows="3"></textarea>
             </div>
-            <div class="form-group col-lg-6">
-              <input id="node_email" type="email" class="form-control" placeholder="your email"
-               onkeypress="return event.keyCode != 13;">
-              <a id="btn_request_pass" class="btn btn-info btn-sm mt-2" href="javascript:void(0);">Request Pass Code</a>
+            <div class="form-row col-lg-8">
+              <div class="form-group col-lg-8">
+                <input id="node_email" type="email" class="form-control" placeholder="your email"
+                 onkeypress="return event.keyCode != 13;">
+              </div>
+              <div class="form-group col-lg-4">
+                <a id="btn_request_pass" class="btn btn-info btn-sm" href="javascript:void(0);">Request Pass Code</a>
+              </div>
             </div>
             <div class="form-group col-lg-4">
               <input id="node_pass_code" type="text" class="form-control" placeholder="your pass code"
