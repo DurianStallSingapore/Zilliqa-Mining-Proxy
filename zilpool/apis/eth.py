@@ -52,6 +52,10 @@ def init_apis(config):
         max_dispatch = config.site_settings.max_dispatch
         inc_expire = config.site_settings.inc_expire
 
+        if config["zilliqa"]["enabled"]:
+            if not utils.Zilliqa.is_pow_window():
+                return no_work()
+
         work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
         if not work:
@@ -76,6 +80,10 @@ def init_apis(config):
 
         if not miner_wallet:
             miner_wallet = default_miner
+
+        if config["zilliqa"]["enabled"]:
+            if not utils.Zilliqa.is_pow_window():
+                return False
 
         # 1. validate user input parameters
         nonce_int = h2i(nonce)
