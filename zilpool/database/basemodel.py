@@ -204,6 +204,7 @@ def init_default_settings(config):
             max_dispatch=max_dispatch,
             inc_expire=inc_expire,
             notification="",
+            avg_block_time=90,
         )
         if not setting.save():
             logging.exception("can not save default settings to database")

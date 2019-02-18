@@ -232,7 +232,6 @@ class Zilliqa:
     cur_ds_block = 0
     shard_difficulty = 0
     ds_difficulty = 0
-    avg_block_time = 90
 
     estimeted_pow_time = None
 
@@ -262,16 +261,12 @@ class Zilliqa:
             cls.cache.pop(key, None)
 
     @classmethod
-    def update_avg_block_time(cls, avg_time):
-        cls.avg_block_time = avg_time
-
-    @classmethod
     def calc_secs_to_pow(cls, txblock):
         block_per_pow = cls.zil_conf["BLOCK_PER_POW"]
         block_in_epoch = txblock % block_per_pow
         if block_in_epoch == 0:
             return 0
-        return (block_per_pow - block_in_epoch) * cls.avg_block_time
+        return (block_per_pow - block_in_epoch) * cls.config.site_settings.avg_block_time
 
     @classmethod
     async def get_current_txblock(cls):

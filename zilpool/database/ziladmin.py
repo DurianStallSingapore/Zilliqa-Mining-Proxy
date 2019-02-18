@@ -262,6 +262,8 @@ class SiteSettings(ModelMixin, mg.Document):
     min_fee = mg.FloatField(default=0.0)
     max_dispatch = mg.IntField(default=10)
     inc_expire = mg.FloatField(default=0)
+    # zilliqa network
+    avg_block_time = mg.IntField(default=90)
 
     # website settings
     notification = mg.StringField(max_length=1024)

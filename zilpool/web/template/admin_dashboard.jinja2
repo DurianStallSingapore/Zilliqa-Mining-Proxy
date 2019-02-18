@@ -77,6 +77,14 @@
                   <label class="col col-form-label">increase work's expired time when it dispatched, in seconds</label>
                 </div>
                 <div class="form-group row">
+                  <label for="avg_block_time" class="col-lg-2 col-form-label">Average Block Time</label>
+                  <div class="col-lg-2">
+                    <input type="number" class="form-control" id="avg_block_time"
+                           value="{{ config.site_settings.avg_block_time }}">
+                  </div>
+                  <label class="col col-form-label">the Zilliqa network average block time in seconds</label>
+                </div>
+                <div class="form-group row">
                   <div class="col-lg-2"></div>
                   <div class="col-lg-2">
                     <button id="update_mining_settings" type="submit" class="btn btn-primary w-100">Update</button>
@@ -580,8 +588,12 @@ $(document).ready(function() {
     let min_fee = $.trim($("#min_fee").val());
     let max_dispatch = $.trim($("#max_dispatch").val());
     let inc_expire = $.trim($("#inc_expire").val());
+    let avg_block_time = $.trim($("#avg_block_time").val());
 
-    admin_api("admin_settings", update_callback, parseFloat(min_fee), parseInt(max_dispatch), parseFloat(inc_expire));
+    admin_api("admin_settings", update_callback,
+      parseFloat(min_fee), parseInt(max_dispatch), parseFloat(inc_expire),
+      parseInt(avg_block_time)
+    );
   });
 
   miners_query(0);

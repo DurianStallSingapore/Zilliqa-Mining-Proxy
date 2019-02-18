@@ -87,12 +87,14 @@ def init_apis(config):
 
     @method
     async def admin_settings(request, visa: str,
-                             min_fee=None, max_dispatch=None, inc_expire=None):
+                             min_fee=None, max_dispatch=None, inc_expire=None,
+                             avg_block_time=None):
         admin = get_admin_from_visa(request, visa)
 
         new_setting = SiteSettings.update_setting(
             admin=admin.email,
-            min_fee=min_fee, max_dispatch=max_dispatch, inc_expire=inc_expire
+            min_fee=min_fee, max_dispatch=max_dispatch, inc_expire=inc_expire,
+            avg_block_time=avg_block_time
         )
         if not new_setting:
             return None
@@ -103,6 +105,7 @@ def init_apis(config):
             "min_fee": new_setting.min_fee,
             "max_dispatch": new_setting.max_dispatch,
             "inc_expire": new_setting.inc_expire,
+            "avg_block_time": avg_block_time,
         }
 
     @method
