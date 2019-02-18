@@ -21,6 +21,7 @@ import re
 import yaml
 import hashlib
 import asyncio
+from datetime import datetime, timedelta
 from collections import Mapping
 from functools import wraps
 from cachetools import TTLCache
@@ -222,7 +223,8 @@ def run_in_thread(func):
 
 
 class Zilliqa:
-    conf = None
+    config = None
+    zil_conf = None
     api = None
     cache = None
 
@@ -232,11 +234,14 @@ class Zilliqa:
     ds_difficulty = 0
     avg_block_time = 90
 
+    estimeted_pow_time = None
+
     @classmethod
     def init(cls, conf):
-        cls.conf = conf["zilliqa"]
-        cls.api = zilliqa_api.API(cls.conf["api_endpoint"])
-        cls.cache = TTLCache(maxsize=64, ttl=cls.conf["update_interval"])
+        cls.config = conf
+        cls.zil_conf = conf["zilliqa"]
+        cls.api = zilliqa_api.API(cls.zil_conf["api_endpoint"])
+        cls.cache = TTLCache(maxsize=64, ttl=cls.zil_conf["update_interval"])
 
     @classmethod
     async def get_cache(cls, key, func, *args, **kwargs):
@@ -261,11 +266,22 @@ class Zilliqa:
         cls.avg_block_time = avg_time
 
     @classmethod
+    def calc_secs_to_pow(cls, txblock):
+        block_per_pow = cls.zil_conf["BLOCK_PER_POW"]
+        block_in_epoch = txblock % block_per_pow
+        if block_in_epoch == 0:
+            return 0
+        return (block_per_pow - block_in_epoch) * cls.avg_block_time
+
+    @classmethod
     async def get_current_txblock(cls):
         block = await cls.get_cache("txblock", cls.api.GetCurrentMiniEpoch)
         block = int(block or 0)
         if block > cls.cur_tx_block:
             cls.cur_tx_block = block
+            # update estimeted next pow time
+            delta = timedelta(seconds=cls.calc_secs_to_pow(block))
+            cls.estimeted_pow_time = datetime.utcnow() + delta
 
         return block
 
@@ -301,21 +317,20 @@ class Zilliqa:
             return False
 
         tx_block = cls.cur_tx_block
-        block_per_pow = cls.conf["BLOCK_PER_POW"]
+        block_per_pow = cls.zil_conf["BLOCK_PER_POW"]
         block_in_epoch = tx_block % block_per_pow
         return block_in_epoch in [0, block_per_pow - 1]
 
     @classmethod
     def secs_to_next_pow(cls):
-        if not cls.cur_tx_block:
+        if not cls.cur_tx_block or not cls.estimeted_pow_time:
             return 0
 
-        tx_block = cls.cur_tx_block
-        block_per_pow = cls.conf["BLOCK_PER_POW"]
-        block_in_epoch = tx_block % block_per_pow
-        if block_in_epoch == 0:
-            return 0    # current pow is running
-        return (block_per_pow - block_in_epoch) * cls.avg_block_time
+        now = datetime.utcnow()
+        if now > cls.estimeted_pow_time:
+            return 0
+
+        return (cls.estimeted_pow_time - now).total_seconds()
 
     @classmethod
     async def update_chain_info(cls):
