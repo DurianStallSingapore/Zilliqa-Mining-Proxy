@@ -69,12 +69,7 @@ def init_apis(config):
                 len(timeout) == 10 and      # 4 bytes  -> "0x" + 8 chars
                 len(signature) == 130)      # 64 bytes -> "0x" + 128 chars
 
-        # verify signature
-        if not verify_signature(pub_key, signature,
-                                pub_key, header, block_num, boundary, timeout):
-            logging.warning(f"failed verify signature")
-            return False
-
+        str_block_num, str_timeout = block_num, timeout
         block_num = crypto.hex_str_to_int(block_num)
         timeout = crypto.hex_str_to_int(timeout)
 
@@ -84,9 +79,20 @@ def init_apis(config):
                 logging.warning(f"Invalid PoW request from {pub_key}")
                 return False
 
+        # verify signature
+        if not verify_signature(pub_key, signature,
+                                pub_key, header, str_block_num, boundary, str_timeout):
+            logging.warning(f"failed verify signature")
+            return False
+
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
         if not (node and node.authorized):
             logging.warning(f"unauthorized public key: {pub_key}")
+            return False
+
+        count = pow.PowWork.count(pub_key=pub_key, block_num=block_num)
+        if count >= 2:
+            logging.warning(f"too many PoW requests from {block_num} {pub_key}")
             return False
 
         work = pow.PowWork.new_work(header, block_num, boundary,
