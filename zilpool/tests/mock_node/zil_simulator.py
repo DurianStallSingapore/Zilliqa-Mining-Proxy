@@ -61,7 +61,7 @@ class Node:
 
     async def do_request(self, method, req):
         self.log(f"request {method}")
-        resp = await self.rpc_client.request(method, req, trim_log_values=True)
+        resp = await self.rpc_client.request(method, *req, trim_log_values=True)
         self.log(f"response {resp.data}")
         return resp.data
 
