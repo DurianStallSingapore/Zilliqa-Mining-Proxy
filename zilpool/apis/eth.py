@@ -75,7 +75,7 @@ def init_apis(config):
                 len(header) == 66 and
                 len(mix_digest) == 66 and
                 len(boundary) in [0, 66] and
-                len(miner_wallet) in [0, 42] and
+                len(miner_wallet) in [0, 40, 42] and
                 len(worker_name) < 64)
 
         if not miner_wallet:
