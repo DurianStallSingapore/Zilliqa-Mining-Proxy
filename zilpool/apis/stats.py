@@ -130,7 +130,7 @@ def current_work(config):
         "start_time": utils.iso_format(start_time),
         "next_pow_time": utils.iso_format(next_pow_time),
         "avg_hashrate": miner.HashRate.epoch_hashrate(None),
-        "avg_pow_fee": pow.PowWork.avg_pow_fee(block_num),
+        "avg_pow_fee": pow.PowResult.avg_pow_fee(block_num),
     }
 
 

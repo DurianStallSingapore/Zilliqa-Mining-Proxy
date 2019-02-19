@@ -231,10 +231,8 @@ class PowWork(ModelMixin, mg.Document):
         return cls.get(first=False, order=order, pub_key=pub_key)[:count]
 
     @classmethod
-    def avg_pow_fee(cls, block_num=None):
-        if block_num is None:
-            block_num = cls.get_latest_block_num()
-        return cls.objects(block_num=block_num).average("pow_fee")
+    def avg_pow_fee(cls, block_num):
+        return cls.query(block_num=block_num).average("pow_fee")
 
     @classmethod
     def calc_pow_window(cls, block_num=None):
@@ -319,6 +317,10 @@ class PowResult(ModelMixin, mg.Document):
 
     def __str__(self):
         return f"[PowResult: {self.pub_key}, {self.header}]"
+
+    @classmethod
+    def avg_pow_fee(cls, block_num):
+        return cls.query(block_num=block_num).average("pow_fee")
 
     @classmethod
     def get_pow_result(cls, header, boundary, pub_key=None, order="-finished_time"):
