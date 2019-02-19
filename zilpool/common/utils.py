@@ -97,7 +97,7 @@ def args_to_lower(func):
     return wrapper
 
 
-email_re = re.compile(r"\"?([-a-zA-Z0-9.`?{}]+@\w+\.\w+)\"?")
+email_re = re.compile(r"\"?([a-zA-Z0-9.`?{}_+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)\"?")
 
 
 def valid_email(email: str):
