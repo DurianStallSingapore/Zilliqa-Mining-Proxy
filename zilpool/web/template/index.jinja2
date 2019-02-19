@@ -181,7 +181,7 @@
     const pow_time = dayjs(str_pow_time);
     const seconds = pow_time.diff(dayjs(), "second");
     let pow_msg = "PoW is running";
-    if (seconds > 0 ) {
+    if (seconds > 30 ) {
       if (seconds > 60) {
         pow_msg = (seconds / 60).toFixed(0).toString() + " mins later";
       } else {

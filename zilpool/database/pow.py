@@ -99,6 +99,10 @@ class PoWWindow(ModelMixin, mg.Document):
             logging.warning("we are missing some pow_window records")
             return 0
 
+        if now < last_record.pow_start + timedelta(seconds=last_record.pow_window):
+            # we are in current pow window
+            return 0
+
         return (next_pow_time - now).total_seconds()
 
     @classmethod
@@ -138,11 +142,13 @@ class PoWWindow(ModelMixin, mg.Document):
 
         # 2. create new record and estimate next pow
         epoch_delta = timedelta(seconds=cls.avg_epoch_time())
+        pow_window = last_record.pow_window if last_record else cls.avg_pow_time()
         estimated_next_pow = work.start_time + epoch_delta
         new_record = cls.create(
             block_num=work.block_num,
             create_time=datetime.utcnow(),
             pow_start=work.start_time,
+            pow_window=pow_window,
             estimated_next_pow=estimated_next_pow,
         )
         return new_record
