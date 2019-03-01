@@ -80,10 +80,15 @@ def init_apis(config):
                 return False
 
         # verify signature
-        if not verify_signature(pub_key, signature,
-                                pub_key, header, str_block_num, boundary, str_timeout):
-            logging.warning(f"failed verify signature")
-            return False
+        if not verify_signature(pub_key, signature, pub_key, header,
+                                str_block_num, boundary, str_timeout):
+            # hotfix for Zilliqa v4.2.0
+            # set timeout to 60 and try again
+            str_timeout = crypto.int_to_hex_str_0x(60, n_bytes=4)
+            if not verify_signature(pub_key, signature, pub_key, header,
+                                    str_block_num, boundary, str_timeout):
+                logging.warning(f"failed verify signature")
+                return False
 
         node = zilnode.ZilNode.get_by_pub_key(pub_key=pub_key, authorized=True)
         if not (node and node.authorized):
