@@ -75,12 +75,55 @@ def boundary_to_difficulty(boundary) -> int:
         if b == 0:
             difficulty += 8
         else:
-            difficulty += ZERO_MASK.index(b)
+            difficulty += (8 - b.bit_length())
             break
     return difficulty
 
 
 assert boundary_to_difficulty(difficulty_to_boundary(11)) == 11
+
+
+def difficulty_to_boundary_divided(difficulty: int, n_divided: int=8, n_divided_start: int=32) -> bytes:
+    if difficulty < n_divided_start:
+        return difficulty_to_boundary(difficulty)
+
+    n_level = (difficulty - n_divided_start) // n_divided
+    m_sub_level = (difficulty - n_divided_start) % n_divided
+    difficulty_level = n_divided_start + n_level
+
+    int_boundary = crypto.bytes_to_int(difficulty_to_boundary(difficulty_level))
+    boundary_change_step = (int_boundary >> 1) // n_divided
+
+    int_boundary -= boundary_change_step * m_sub_level
+
+    return crypto.int_to_bytes(int_boundary, n_bytes=32)
+
+
+def boundary_to_difficulty_divided(boundary, n_divided: int=8, n_divided_start: int=32) -> int:
+    if isinstance(boundary, str):
+        boundary = crypto.hex_str_to_bytes(boundary)
+
+    difficulty_level = boundary_to_difficulty(boundary)
+    if difficulty_level < n_divided_start:
+        return difficulty_level
+
+    n_level = difficulty_level - n_divided_start
+
+    int_cur_boundary = crypto.bytes_to_int(boundary)
+    int_cur_level = crypto.bytes_to_int(difficulty_to_boundary(difficulty_level))
+
+    step = (int_cur_level >> 1) // n_divided
+    m_sub_level = (int_cur_level - int_cur_boundary) // step
+
+    new_difficulty = n_divided_start + n_level * n_divided + m_sub_level
+    return new_difficulty
+
+
+assert boundary_to_difficulty_divided(difficulty_to_boundary_divided(31)) == 31
+assert boundary_to_difficulty_divided(difficulty_to_boundary_divided(32)) == 32
+assert boundary_to_difficulty_divided(difficulty_to_boundary_divided(49)) == 49
+assert boundary_to_difficulty_divided(difficulty_to_boundary_divided(255)) == 255
+assert boundary_to_difficulty_divided(difficulty_to_boundary(31)) == 31
 
 dividend = 0xffff000000000000000000000000000000000000000000000000000000000000
 
@@ -95,6 +138,14 @@ def boundary_to_hashpower(boundary) -> int:
 
 def difficulty_to_hashpower(difficulty: int) -> int:
     return boundary_to_hashpower(difficulty_to_boundary(difficulty))
+
+
+def difficulty_to_hashpower_divided(difficulty: int, n_divided: int=8, n_divided_start: int=32) -> int:
+    return boundary_to_hashpower(
+        difficulty_to_boundary_divided(
+            difficulty, n_divided=n_divided, n_divided_start=n_divided_start
+        )
+    )
 
 
 def is_less_or_equal(hash_1: Union[str, bytes],

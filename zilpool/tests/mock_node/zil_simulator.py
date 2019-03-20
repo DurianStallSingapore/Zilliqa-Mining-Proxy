@@ -76,7 +76,7 @@ class Node:
 
     def make_work_request(self, work, diff):
         timeout = crypto.int_to_bytes(self.pow_timeout, n_bytes=4)
-        boundary = ethash.difficulty_to_boundary(diff)
+        boundary = ethash.difficulty_to_boundary_divided(diff)
 
         # requests are bytes
         bytes_reqs = [
@@ -102,7 +102,7 @@ class Node:
         return req
 
     def make_check_request(self, work, diff):
-        boundary = ethash.difficulty_to_boundary(diff)
+        boundary = ethash.difficulty_to_boundary_divided(diff)
 
         # requests are bytes
         bytes_reqs = [
@@ -126,7 +126,7 @@ class Node:
         return req
 
     def make_verify_request(self, work, diff, verify=True):
-        boundary = ethash.difficulty_to_boundary(diff)
+        boundary = ethash.difficulty_to_boundary_divided(diff)
 
         byte_verify = b"\x01" if verify else b"\x00"
 

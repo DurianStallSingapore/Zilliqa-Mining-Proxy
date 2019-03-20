@@ -101,7 +101,7 @@ def add_new_work(block_num, difficulty, timeout, node=0):
     print(f"Generate a work for block {block_num}, difficulty {difficulty}")
     header = crypto.rand_hex_str_0x(64)
     seed = crypto.bytes_to_hex_str_0x(ethash.block_num_to_seed(block_num))
-    boundary = crypto.bytes_to_hex_str_0x(ethash.difficulty_to_boundary(difficulty))
+    boundary = crypto.bytes_to_hex_str_0x(ethash.difficulty_to_boundary_divided(difficulty))
 
     print(f"    header    : {header}")
     print(f"    seed      : {seed}")

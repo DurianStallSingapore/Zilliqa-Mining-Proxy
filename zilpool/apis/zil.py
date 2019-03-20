@@ -47,8 +47,15 @@ def init_apis(config):
             utils.Zilliqa.ds_difficulty
         ]
         if difficulty not in network_difficulty:
-            logging.warning(f"Got wrong difficulty {difficulty}")
-            return False
+            # try divided difficulty
+            difficulty = ethash.boundary_to_difficulty_divided(
+                boundary,
+                n_divided=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED"],
+                n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED_START"]
+            )
+            if difficulty not in network_difficulty:
+                logging.warning(f"Got wrong difficulty {difficulty}")
+                return False
 
         if timeout > config["zilliqa"]["POW_WINDOW_IN_SECONDS"]:
             logging.warning(f"Got wrong timeout {timeout}")
