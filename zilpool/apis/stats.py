@@ -119,8 +119,8 @@ def current_work(config):
         difficulty = (utils.Zilliqa.shard_difficulty, utils.Zilliqa.ds_difficulty)
         difficulty = [ethash.difficulty_to_hashpower_divided(
             d,
-            n_divided=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED"],
-            n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED_START"]
+            n_divided=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED"],
+            n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED_START"]
         ) for d in difficulty]
         secs_next_pow = utils.Zilliqa.secs_to_next_pow()
 

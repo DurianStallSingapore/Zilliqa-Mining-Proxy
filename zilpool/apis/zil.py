@@ -50,8 +50,8 @@ def init_apis(config):
             # try divided difficulty
             difficulty = ethash.boundary_to_difficulty_divided(
                 boundary,
-                n_divided=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED"],
-                n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DEVIDED_START"]
+                n_divided=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED"],
+                n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED_START"]
             )
             if difficulty not in network_difficulty:
                 logging.warning(f"Got wrong difficulty {difficulty}")
