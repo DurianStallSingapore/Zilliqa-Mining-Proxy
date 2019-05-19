@@ -21,7 +21,7 @@ import time
 import logging
 
 import asyncio
-from zilpool.common import utils
+from zilpool.common import blockchain
 from zilpool.pyzil.zilliqa_api import APIError
 
 
@@ -29,7 +29,7 @@ async def update_chain_info(config):
     try:
         while True:
             try:
-                await utils.Zilliqa.update_chain_info()
+                await blockchain.Zilliqa.update_chain_info()
             except APIError as e:
                 logging.error(f"APIError {e}")
 

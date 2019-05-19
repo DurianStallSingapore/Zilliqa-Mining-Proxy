@@ -20,15 +20,11 @@ import os
 import re
 import yaml
 import hashlib
-import asyncio
-from datetime import datetime, timedelta
 from collections import Mapping
 from functools import wraps
-from cachetools import TTLCache
 from concurrent.futures import ThreadPoolExecutor
 
 from zilpool.pyzil import crypto
-from zilpool.pyzil import zilliqa_api
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 app_dir = os.path.join(cur_dir, "..")    # warning: take care
@@ -220,133 +216,3 @@ def run_in_thread(func):
         return thread_pool.submit(func, *args, **kwargs)
 
     return wrapper
-
-
-class Zilliqa:
-    config = None
-    zil_conf = None
-    api = None
-    cache = None
-
-    cur_tx_block = 0
-    cur_ds_block = 0
-    shard_difficulty = 0
-    ds_difficulty = 0
-
-    estimeted_pow_time = None
-
-    @classmethod
-    def init(cls, conf):
-        cls.config = conf
-        cls.zil_conf = conf["zilliqa"]
-        cls.api = zilliqa_api.API(cls.zil_conf["api_endpoint"])
-        cls.cache = TTLCache(maxsize=64, ttl=cls.zil_conf["update_interval"])
-
-    @classmethod
-    async def get_cache(cls, key, func, *args, **kwargs):
-        val = cls.cache.get(key)
-        if val is None:
-            val = await func(*args, **kwargs)
-            try:
-                cls.cache[key] = val
-            except KeyError:
-                pass
-        return val
-
-    @classmethod
-    def clear_cache(cls, key=None):
-        if key is None:
-            cls.cache.clear()
-        else:
-            cls.cache.pop(key, None)
-
-    @classmethod
-    def calc_secs_to_pow(cls, txblock):
-        block_per_pow = cls.zil_conf["BLOCK_PER_POW"]
-        block_in_epoch = txblock % block_per_pow
-        if block_in_epoch == 0:
-            return 0
-        return (block_per_pow - block_in_epoch) * cls.config.site_settings.avg_block_time
-
-    @classmethod
-    async def get_current_txblock(cls):
-        block = await cls.get_cache("txblock", cls.api.GetCurrentMiniEpoch)
-        block = int(block or 0)
-        if block > cls.cur_tx_block:
-            cls.cur_tx_block = block
-            # update estimeted next pow time
-            delta = timedelta(seconds=cls.calc_secs_to_pow(block))
-            cls.estimeted_pow_time = datetime.utcnow() + delta
-
-        return block
-
-    @classmethod
-    async def get_current_dsblock(cls):
-        block = await cls.get_cache("dsblock", cls.api.GetCurrentDSEpoch)
-        block = int(block or 0)
-        if block > cls.cur_ds_block:
-            cls.cur_ds_block = block
-        return block
-
-    @classmethod
-    async def get_difficulty(cls):
-        shard_difficulty = await cls.get_cache("shard_difficulty",
-                                               cls.api.GetPrevDifficulty)
-
-        if shard_difficulty:
-            cls.shard_difficulty = shard_difficulty
-        return shard_difficulty
-
-    @classmethod
-    async def get_ds_difficulty(cls):
-        ds_difficulty = await cls.get_cache("ds_difficulty",
-                                            cls.api.GetPrevDSDifficulty)
-
-        if ds_difficulty:
-            cls.ds_difficulty = ds_difficulty
-        return ds_difficulty
-
-    @classmethod
-    def is_pow_window(cls):
-        if not cls.cur_tx_block:
-            return False
-
-        tx_block = cls.cur_tx_block
-        block_per_pow = cls.zil_conf["BLOCK_PER_POW"]
-        block_in_epoch = tx_block % block_per_pow
-        return block_in_epoch in [0, block_per_pow - 1]
-
-    @classmethod
-    def secs_to_next_pow(cls):
-        if not cls.cur_tx_block or not cls.estimeted_pow_time:
-            return 0
-
-        now = datetime.utcnow()
-        if now > cls.estimeted_pow_time:
-            return 0
-
-        return (cls.estimeted_pow_time - now).total_seconds()
-
-    @classmethod
-    async def update_chain_info(cls):
-        tasks = [
-            cls.get_current_txblock(),
-            cls.get_current_dsblock(),
-            cls.get_difficulty(),
-            cls.get_ds_difficulty(),
-        ]
-
-        await asyncio.wait(tasks)
-
-    @classmethod
-    async def get_balance(cls, address):
-        if address.startswith("0x"):
-            address = address[2:]
-        resp = await cls.get_cache(f"balance_{address}",
-                                   cls.api.GetBalance,
-                                   address)
-        if not resp:
-            return 0.0
-
-        balance = int(resp["balance"])
-        return balance / pow(10, 12)

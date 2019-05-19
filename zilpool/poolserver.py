@@ -124,7 +124,7 @@ def update_config(site, config):
 
 
 def start_servers(conf_file=None, host=None, port=None):
-    from zilpool.common import utils, mail
+    from zilpool.common import utils, mail, blockchain
     from zilpool.database import init_db, connect_to_db
 
     # merge user's config with default.conf
@@ -141,7 +141,7 @@ def start_servers(conf_file=None, host=None, port=None):
     init_db(config)
 
     # init Zilliqa network APIs
-    utils.Zilliqa.init(config)
+    blockchain.Zilliqa.init(config)
 
     # init app
     app = web.Application(debug=config["debug"])

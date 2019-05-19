@@ -20,7 +20,7 @@ import logging
 from typing import List, Tuple
 from jsonrpcserver import method
 
-from zilpool.common import utils
+from zilpool.common import utils, blockchain
 from zilpool.database import pow, miner
 from zilpool.pyzil import ethash
 from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
@@ -37,8 +37,8 @@ def init_apis(config):
         is_pow_running = False
 
         if config["zilliqa"]["enabled"]:
-            is_pow_running = utils.Zilliqa.is_pow_window()
-            seconds_to_next_pow = utils.Zilliqa.secs_to_next_pow()
+            is_pow_running = blockchain.Zilliqa.is_pow_window()
+            seconds_to_next_pow = blockchain.Zilliqa.secs_to_next_pow()
         else:
             seconds_to_next_pow = pow.PoWWindow.seconds_to_next_pow()
 
@@ -53,7 +53,7 @@ def init_apis(config):
         inc_expire = config.site_settings.inc_expire
 
         if config["zilliqa"]["enabled"]:
-            if not utils.Zilliqa.is_pow_window():
+            if not blockchain.Zilliqa.is_pow_window():
                 return no_work()
 
         work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
@@ -82,7 +82,7 @@ def init_apis(config):
             miner_wallet = default_miner
 
         if config["zilliqa"]["enabled"]:
-            if not utils.Zilliqa.is_pow_window():
+            if not blockchain.Zilliqa.is_pow_window():
                 return False
 
         # 1. validate user input parameters

@@ -20,7 +20,7 @@ import logging
 from datetime import datetime
 from jsonrpcserver import method
 
-from zilpool.common import utils
+from zilpool.common import utils, blockchain
 from zilpool.pyzil import crypto, ethash
 from zilpool.database import pow, zilnode
 
@@ -29,11 +29,11 @@ def init_apis(config):
     zil_config = config["api_server"]["zil"]
 
     def check_network_info(block_num, boundary, timeout):
-        if not utils.Zilliqa.is_pow_window():
+        if not blockchain.Zilliqa.is_pow_window():
             logging.warning(f"The network is not in pow window")
             return False
 
-        network_ds_block = utils.Zilliqa.cur_ds_block
+        network_ds_block = blockchain.Zilliqa.cur_ds_block
         if block_num < network_ds_block:
             logging.warning(f"Got wrong block number: {block_num} < {network_ds_block}")
             return False
@@ -42,10 +42,10 @@ def init_apis(config):
             return False
 
         network_difficulty = [
-            utils.Zilliqa.shard_difficulty
+            blockchain.Zilliqa.shard_difficulty
         ]
         if config.site_settings.allow_ds_pow:
-            network_difficulty.append(utils.Zilliqa.ds_difficulty)
+            network_difficulty.append(blockchain.Zilliqa.ds_difficulty)
 
         # try divided difficulty
         difficulty = ethash.boundary_to_difficulty_divided(
