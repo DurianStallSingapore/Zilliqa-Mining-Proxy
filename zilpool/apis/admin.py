@@ -86,27 +86,22 @@ def init_apis(config):
         return True
 
     @method
-    async def admin_settings(request, visa: str,
-                             min_fee=None, max_dispatch=None, inc_expire=None,
-                             avg_block_time=None):
+    async def admin_settings(request, visa: str, new_settings=None):
         admin = get_admin_from_visa(request, visa)
 
-        new_setting = SiteSettings.update_setting(
-            admin=admin.email,
-            min_fee=min_fee, max_dispatch=max_dispatch, inc_expire=inc_expire,
-            avg_block_time=avg_block_time
-        )
-        if not new_setting:
-            return None
+        if new_settings is None:
+            site_setting = SiteSettings.get_setting()
+        else:
+            site_setting = SiteSettings.update_setting(
+                admin=admin.email, **new_settings
+            )
+            if not site_setting:
+                site_setting = SiteSettings.get_setting()
 
-        return {
-            "admin": new_setting.admin,
-            "created": iso_format(new_setting.created),
-            "min_fee": new_setting.min_fee,
-            "max_dispatch": new_setting.max_dispatch,
-            "inc_expire": new_setting.inc_expire,
-            "avg_block_time": avg_block_time,
-        }
+        resp = site_setting.to_mongo().to_dict()
+        resp.pop("_id", None)
+        resp["created"] = utils.iso_format(resp["created"])
+        return resp
 
     @method
     async def admin_approve_node(request, visa: str,

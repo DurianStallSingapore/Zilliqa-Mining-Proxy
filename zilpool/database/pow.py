@@ -28,7 +28,7 @@ from .basemodel import ModelMixin
 
 
 class PoWWindow(ModelMixin, mg.Document):
-    meta = {"collection": "zil_pow_windows"}
+    meta = {"collection": "zil_pow_windows", "strict": False}
 
     create_time = mg.DateTimeField()
     block_num = mg.IntField(required=True)
@@ -171,7 +171,7 @@ class PowWork(ModelMixin, mg.Document):
     pow_fee = mg.FloatField(default=0.0)
     dispatched = mg.IntField(default=0)
 
-    meta = {"collection": "zil_pow_works"}
+    meta = {"collection": "zil_pow_works", "strict": False}
 
     def __str__(self):
         return f"[PowWork: {self.header}, {self.finished}, {self.start_time}]"
@@ -300,7 +300,7 @@ class PowWork(ModelMixin, mg.Document):
 
 
 class PowResult(ModelMixin, mg.Document):
-    meta = {"collection": "zil_pow_results"}
+    meta = {"collection": "zil_pow_results", "strict": False}
 
     header = mg.StringField(max_length=128, required=True)
     seed = mg.StringField(max_length=128, required=True)

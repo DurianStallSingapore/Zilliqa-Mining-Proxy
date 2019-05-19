@@ -39,7 +39,7 @@ AdminActions = [
 
 
 class ZilAdminToken(ModelMixin, mg.Document):
-    meta = {"collection": "zil_admin_token"}
+    meta = {"collection": "zil_admin_token", "strict": False}
 
     token = mg.StringField(max_length=128)
     expire_time = mg.DateTimeField()
@@ -183,7 +183,7 @@ class ZilAdminToken(ModelMixin, mg.Document):
 class ZilAdmin(ModelMixin, mg.Document):
     VISA_LENGTH = 16
 
-    meta = {"collection": "zil_admin"}
+    meta = {"collection": "zil_admin", "strict": False}
     email = mg.StringField(max_length=128, required=True, unique=True)
     password_hash = mg.StringField(max_length=128, required=True)
     visa = mg.StringField(max_length=128)    # for login api
@@ -253,7 +253,7 @@ class ZilAdmin(ModelMixin, mg.Document):
 
 
 class SiteSettings(ModelMixin, mg.Document):
-    meta = {"collection": "zil_site_settings"}
+    meta = {"collection": "zil_site_settings", "strict": False}
 
     admin = mg.StringField()    # the email of admin who create this setting
     created = mg.DateTimeField()

@@ -591,8 +591,12 @@ $(document).ready(function() {
     let avg_block_time = $.trim($("#avg_block_time").val());
 
     admin_api("admin_settings", update_callback,
-      parseFloat(min_fee), parseInt(max_dispatch), parseFloat(inc_expire),
-      parseInt(avg_block_time)
+      {
+        "min_fee": parseFloat(min_fee),
+        "max_dispatch": parseInt(max_dispatch),
+        "inc_expire": parseFloat(inc_expire),
+        "avg_block_time": parseInt(avg_block_time)
+      }
     );
   });
 

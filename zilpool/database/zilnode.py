@@ -26,7 +26,7 @@ from .basemodel import ModelMixin
 
 
 class ZilNodeOwner(ModelMixin, mg.Document):
-    meta = {"collection": "zil_nodes_owner"}
+    meta = {"collection": "zil_nodes_owner", "strict": False}
 
     email = mg.StringField(max_length=128, required=True, unique=True)
     password_hash = mg.StringField(max_length=128)
@@ -68,7 +68,7 @@ class ZilNodeOwner(ModelMixin, mg.Document):
 
 
 class ZilNode(ModelMixin, mg.Document):
-    meta = {"collection": "zil_nodes"}
+    meta = {"collection": "zil_nodes", "strict": False}
 
     pub_key = mg.StringField(max_length=128, required=True, unique=True)
     pow_fee = mg.FloatField(default=0.0)

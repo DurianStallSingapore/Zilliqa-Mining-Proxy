@@ -29,7 +29,7 @@ def init_apis(config):
         new_miner = miner_register(config, wallet_address, email, pass_code)
         if not new_miner:
             return False
-        resp = new_miner.to_mongo()
+        resp = new_miner.to_mongo().to_dict()
         resp.pop("_id", None)
         resp["join_date"] = utils.iso_format(resp["join_date"])
         return resp

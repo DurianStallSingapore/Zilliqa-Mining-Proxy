@@ -32,7 +32,7 @@ A Worker -> Time series of hashrate
 
 
 class Miner(ModelMixin, mg.Document):
-    meta = {"collection": "zil_miners"}
+    meta = {"collection": "zil_miners", "strict": False}
 
     wallet_address = mg.StringField(max_length=128, required=True, unique=True)
     rewards = mg.FloatField(default=0.0)
@@ -99,7 +99,7 @@ class Miner(ModelMixin, mg.Document):
 
 
 class Worker(ModelMixin, mg.Document):
-    meta = {"collection": "zil_mine_workers"}
+    meta = {"collection": "zil_mine_workers", "strict": False}
 
     wallet_address = mg.StringField(max_length=128, required=True)
     worker_name = mg.StringField(max_length=64, default="")
@@ -171,7 +171,7 @@ class Worker(ModelMixin, mg.Document):
 
 
 class HashRate(ModelMixin, mg.Document):
-    meta = {"collection": "zil_mine_hashrate"}
+    meta = {"collection": "zil_mine_hashrate", "strict": False}
 
     wallet_address = mg.StringField(max_length=128, required=True)
     worker_name = mg.StringField(max_length=64, default="")
