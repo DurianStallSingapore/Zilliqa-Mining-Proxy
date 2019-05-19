@@ -41,19 +41,22 @@ def init_apis(config):
             logging.warning(f"Got wrong block number: {block_num} > {network_ds_block} + 1")
             return False
 
-        difficulty = ethash.boundary_to_difficulty(boundary)
         network_difficulty = [
-            utils.Zilliqa.shard_difficulty,
-            utils.Zilliqa.ds_difficulty
+            utils.Zilliqa.shard_difficulty
         ]
+        if config.site_settings.allow_ds_pow:
+            network_difficulty.append(utils.Zilliqa.ds_difficulty)
+
+        # try divided difficulty
+        difficulty = ethash.boundary_to_difficulty_divided(
+            boundary,
+            n_divided=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED"],
+            n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED_START"]
+        )
         if difficulty not in network_difficulty:
-            # try divided difficulty
-            difficulty = ethash.boundary_to_difficulty_divided(
-                boundary,
-                n_divided=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED"],
-                n_divided_start=config["zilliqa"]["POW_BOUNDARY_N_DIVIDED_START"]
-            )
-            if difficulty not in network_difficulty:
+            # try original difficulty
+            old_difficulty = ethash.boundary_to_difficulty(boundary)
+            if old_difficulty not in network_difficulty:
                 logging.warning(f"Got wrong difficulty {difficulty}")
                 return False
 
