@@ -19,13 +19,14 @@
 """
 
 import ssl
-import threading
 import asyncio
 
 from aiohttp import ClientSession
 from jsonrpcclient.exceptions import JsonRpcClientError
 from jsonrpcclient.clients.aiohttp_client import AiohttpClient
 
+
+INVALID_PARAMS = "INVALID_PARAMS: Invalid method parameters (invalid name and/or type) recognised"
 
 context = ssl._create_unverified_context()
 
@@ -44,8 +45,11 @@ class API:
 
     def __init__(self, endpoint):
         self.endpoint = endpoint
-
         self.loop = asyncio.get_event_loop()
+        self.session = None
+        self.api_client = None
+
+    async def init_client(self):
         self.session = ClientSession(loop=self.loop)
         self.api_client = AiohttpClient(
             self.session,
@@ -57,19 +61,35 @@ class API:
         return API.APIMethod(self, method_name=item)
 
     def __del__(self):
-        self.loop.run_until_complete(self.session.close())
+        if self.session is not None:
+            self.loop.run_until_complete(self.session.close())
 
     async def call(self, method, *params, **kwargs):
-        return await self.api_client.request(
-            method, *params,
-            trim_log_values=True, **kwargs
-        )
+        if self.api_client is None:
+            await self.init_client()
+
+        try:
+            return await self.api_client.request(
+                method, *params,
+                trim_log_values=True, **kwargs
+            )
+        except JsonRpcClientError as e:
+            # fix for jsonrpcclient < 3.3.1
+            if str(e) == INVALID_PARAMS:
+                if len(params) == 1 and (isinstance(params[0], (dict, list))):
+                    params = (list(params),)
+                    return await self.api_client.request(
+                        method, *params,
+                        trim_log_values=True, **kwargs
+                    )
+
+            raise e
 
 
 if "__main__" == __name__:
     loop = asyncio.get_event_loop()
 
-    api = API("https://api.zilliqa.com/")
+    api = API("https://dev-api.zilliqa.com/")
     block = loop.run_until_complete(api.GetCurrentMiniEpoch())
     print(block)
     block = loop.run_until_complete(api.GetCurrentDSEpoch())
@@ -77,6 +97,8 @@ if "__main__" == __name__:
     block = loop.run_until_complete(api.GetCurrentMiniEpoch())
     print(block)
 
-    balance = loop.run_until_complete(api.GetBalance("0123456789012345678901234567890123456789"))
-    print(balance)
-
+    try:
+        balance = loop.run_until_complete(api.GetBalance("4BAF5faDA8e5Db92C3d3242618c5B47133AE003C"))
+        print(balance)
+    except APIError as e:
+        print(f"APIError: {e}")
