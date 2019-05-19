@@ -275,7 +275,10 @@ class PowWork(ModelMixin, mg.Document):
         if work.dispatched >= max_dispatch:
             new_start_time = work.start_time + timedelta(seconds=inc_seconds)
             if new_start_time >= work.expire_time:
-                logging.error(f"max dispatched exceeded {work.dispatched}, {work.header} - {work.boundary}")
+                logging.error(f"reset start_time to retry,  {work.header} - {work.boundary}")
+                now = datetime.utcnow()
+                if now < work.expire_time:
+                    work = work.update(dispatched=1, start_time=now)
             else:
                 logging.warning(f"reset dispatched to retry, {self.header} - {self.boundary}")
                 work = work.update(dispatched=1, start_time=new_start_time)
