@@ -83,7 +83,8 @@ class Zilliqa:
         block_in_epoch = txblock % block_per_pow
         if block_in_epoch == 0:
             return 0
-        return (block_per_pow - block_in_epoch) * cls.config.site_settings.avg_block_time
+        secs_to_99 = (block_per_pow - 1 - block_in_epoch) * cls.config.site_settings.avg_block_time
+        return secs_to_99 + 30
 
     @classmethod
     async def get_current_txblock(cls):
