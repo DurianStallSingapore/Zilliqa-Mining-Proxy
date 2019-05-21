@@ -25,7 +25,7 @@ from zilpool.pyzil import crypto, ethash
 
 from . import miner
 from .basemodel import ModelMixin
-
+from zilpool.stratum.stratum_server import *
 
 class PoWWindow(ModelMixin, mg.Document):
     meta = {"collection": "zil_pow_windows", "strict": False}
@@ -181,9 +181,10 @@ class PowWork(ModelMixin, mg.Document):
                  pub_key="", signature="", timeout=120, pow_fee=0.0):
         start_time = datetime.utcnow()
         expire_time = start_time + timedelta(seconds=timeout)
+        print("block_num " + str(block_num))
         seed = ethash.block_num_to_seed(block_num)
         seed = crypto.bytes_to_hex_str_0x(seed)
-
+        print("new_work seed " + str(seed))
         return cls.create(
             header=header, seed=seed, boundary=boundary, pow_fee=pow_fee,
             pub_key=pub_key, signature=signature, block_num=block_num,

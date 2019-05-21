@@ -23,7 +23,7 @@ from jsonrpcserver import method
 from zilpool.common import utils, blockchain
 from zilpool.pyzil import crypto, ethash
 from zilpool.database import pow, zilnode
-
+from zilpool.stratum.stratum_server import *
 
 def init_apis(config):
     zil_config = config["api_server"]["zil"]
@@ -115,6 +115,20 @@ def init_apis(config):
                                     timeout=timeout, pow_fee=node.pow_fee)
         # update pow window
         pow.PoWWindow.update_pow_window(work)
+
+        for stratumMiner in stratumMiners:
+            print(stratumMiner)
+            min_fee = config.site_settings.min_fee
+            max_dispatch = config.site_settings.max_dispatch
+            inc_expire = config.site_settings.inc_expire
+
+            work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
+                                         max_dispatch=max_dispatch)
+            if work is not None:
+                stratumMiner.notify_difficulty(work.boundary)
+                if work.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
+                    print("work.pk: " + str(work.pk))
+                    stratumMiner.notify_work(work)
 
         logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
 
