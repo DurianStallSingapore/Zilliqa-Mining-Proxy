@@ -20,12 +20,14 @@ start file
 
 import os
 import argparse
+import asyncio
 from zilpool import poolserver
+#from zilpool.stratum import stratum_server
+from zilpool.stratum.stratum_server import StratumServerProtocol
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 
-
-def main():
+async def main():
     parser = argparse.ArgumentParser(
         description="Run Zilliqa Mining Proxy",
         usage="""python start.py --conf pool.conf --port 4202"""
@@ -43,8 +45,8 @@ def main():
     host = args.host if args.host else None
     port = args.port if args.port else None
 
-    poolserver.start_servers(conf_file=conf_file, host=host, port=port)
+    await poolserver.start_servers(conf_file=conf_file, host=host, port=port)
 
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+asyncio.run(main())
