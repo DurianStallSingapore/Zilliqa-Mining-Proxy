@@ -31,10 +31,8 @@ class StratumMiner:
         dictOfReply["method"] = "mining.set_difficulty"
         dictOfReply["params"] = [target]
         strReply = json.dumps(dictOfReply)
-        print("Before append length " + str(len(strReply)))
         strReply += '\n'
-        print("After append length " + str(len(strReply)))
-        print("Server Reply >" + strReply)
+        logging.info(f"Server Reply {strReply}")
         self._transport.write(strReply.encode())
 
     def notify_work(self, work):
@@ -47,7 +45,7 @@ class StratumMiner:
             dictOfReply["params"] = [work.pk, work.seed, work.header, True]
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
-        print("Server Reply >" + strReply)
+        logging.info(f"Server Reply {strReply}")
         self._transport.write(strReply.encode())
 
 class StratumServerProtocol(asyncio.Protocol):
