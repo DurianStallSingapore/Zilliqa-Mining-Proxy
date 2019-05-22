@@ -126,10 +126,15 @@ def add_protocol():
     #stratumMiners.append(proto)
     return proto
 
-async def start_stradum():
+async def start_stradum(config):
     # run stratum server
+    port = config["stratum_server"].get("port", "33456")
+    host = config["stratum_server"].get("host", "0.0.0.0")
+
     loop = asyncio.get_running_loop()
-    server = await loop.create_server(add_protocol(), '172.17.1.129', 9999)
+    server = await loop.create_server(add_protocol(), host, port)
+
+    logging.critical(f"Stratum server running at: {host}:{port}")
 
     async with server:
         await server.serve_forever()
@@ -189,7 +194,7 @@ async def start_servers(conf_file=None, host=None, port=None):
     # update config
     update_config(site, config)
 
-    await start_stradum()
+    await start_stradum(config)
     #server = StratumServerProtocol
     #await server.start(server)
 
