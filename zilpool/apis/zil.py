@@ -106,9 +106,9 @@ def init_apis(config):
             return False
 
         count = pow.PowWork.count(pub_key=pub_key, block_num=block_num)
-        if count >= 2:
-            logging.warning(f"too many PoW requests from {block_num} {pub_key}")
-            return False
+        # if count >= 2:
+        #     logging.warning(f"too many PoW requests from {block_num} {pub_key}")
+        #     return False
 
         work = pow.PowWork.new_work(header, block_num, boundary,
                                     pub_key=pub_key, signature=signature,
@@ -117,7 +117,6 @@ def init_apis(config):
         pow.PoWWindow.update_pow_window(work)
 
         for stratumMiner in stratumMiners:
-            print(stratumMiner)
             min_fee = config.site_settings.min_fee
             max_dispatch = config.site_settings.max_dispatch
             inc_expire = config.site_settings.inc_expire
@@ -127,7 +126,6 @@ def init_apis(config):
             if work is not None:
                 stratumMiner.notify_difficulty(work.boundary)
                 if work.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
-                    print("work.pk: " + str(work.pk))
                     stratumMiner.notify_work(work)
 
         logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
@@ -191,7 +189,7 @@ def init_apis(config):
         if pow_result.update(verified=verified,
                              verified_time=datetime.utcnow()):
             worker = pow_result.get_worker()
-            if not worker:
+            if worker is None:
                 logging.warning(f"worker not found, {pow_result.worker_name}"
                                 f"@{pow_result.miner_wallet}")
             else:

@@ -97,7 +97,9 @@ def init_apis(config):
         if not _miner or not _worker:
             logging.warning("miner/worker not found, {worker_name}@{miner_wallet}")
             return False
-        _worker.update_stat(inc_submitted=1)
+
+        if _worker is not None:
+            _worker.update_stat(inc_submitted=1)
 
         # 3. check work existing
         work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary,

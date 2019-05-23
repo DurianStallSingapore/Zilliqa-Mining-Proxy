@@ -1,13 +1,15 @@
 import asyncio
 import json
 import logging
-from zilpool.stratum.miner_conn import Connections
+from bson import ObjectId
+
 from zilpool.common import utils, blockchain
 from zilpool.database import pow, miner
 from zilpool.pyzil import ethash
 from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
 from zilpool.pyzil.crypto import hex_str_to_int as h2i
 from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
+
 
 stratumMiners = []
 
@@ -42,7 +44,7 @@ class StratumMiner:
         if self._stratusVersion == STRATUM_BASIC:            
             dictOfReply["params"] = [str(work.pk), work.header, work.seed, work.boundary]
         elif self._stratusVersion == STRATUM_NICEHASH:
-            dictOfReply["params"] = [work.pk, work.seed, work.header, True]
+            dictOfReply["params"] = [str(work.pk), work.seed, work.header, True]
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info(f"Server Reply {strReply}")
@@ -56,10 +58,6 @@ class StratumServerProtocol(asyncio.Protocol):
         self.subscribed = False
         self.miner_wallet = None
 
-    # Deleting (Calling destructor) 
-    def __del__(self): 
-        print('Destructor called, StratumServerProtocol deleted.')
-
     async def start(self):
         loop = asyncio.get_running_loop()
         server = await loop.create_server(self, '127.0.0.1', 9999)
@@ -69,28 +67,31 @@ class StratumServerProtocol(asyncio.Protocol):
     
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
+        logging.critical(f'Connection from {peername}')
         self.transport = transport
 
     def connection_lost(self, exc):
-        print("Connection lost")
-        print(exec)
+        logging.critical("Connection lost")
 
     def data_received(self, data):
         message = data.decode()
-        print('Data received: {!r}'.format(message))
+        logging.critical('Data received: {!r}'.format(message))
         for subMessage in message.split('\n'):
             if (len(subMessage) <= 0):
                 break
-            jsonMsg = json.loads(subMessage)
-            if (jsonMsg['id'] == 1 and jsonMsg["method"] == "mining.subscribe"):
-                self.process_subscribe(jsonMsg)
-            elif (jsonMsg['id'] == 3 and jsonMsg["method"] == "mining.authorize"):
-                self.process_authorize(jsonMsg)
-            elif (jsonMsg['id'] == 2 and jsonMsg["method"] == "mining.extranonce.subscribe"):
-                self.send_extranonce_reply()
-            elif(jsonMsg["method"] == "mining.submit"):
-                self.process_submit(jsonMsg)
+            try:
+                jsonMsg = json.loads(subMessage)
+                if (jsonMsg['id'] == 1 and jsonMsg["method"] == "mining.subscribe"):
+                    self.process_subscribe(jsonMsg)
+                elif (jsonMsg['id'] == 3 and jsonMsg["method"] == "mining.authorize"):
+                    self.process_authorize(jsonMsg)
+                elif (jsonMsg['id'] == 2 and jsonMsg["method"] == "mining.extranonce.subscribe"):
+                    pass
+                    #self.send_extranonce_reply()
+                elif(jsonMsg["method"] == "mining.submit"):
+                    self.process_submit(jsonMsg)
+            except ValueError:
+                logging.critical(f"Failed to parse json message {subMessage}")
 
     def notify(self, data):
         self.transport.write("Notify something")
@@ -119,37 +120,49 @@ class StratumServerProtocol(asyncio.Protocol):
 
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
-        print("Server Reply >" + strReply)
+        logging.info("Server Reply >" + strReply)
         self.transport.write(strReply.encode())
 
-    def send_success_reply(self):
+    def send_success_reply(self, id):
         dictOfReply = dict()
-        dictOfReply["id"] = 3
+        dictOfReply["id"] = id
         dictOfReply["result"] = True
         dictOfReply["error"] = None
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
-        print("Server Reply >" + strReply)
+        logging.info("Server Reply > " + strReply)
         self.transport.write(strReply.encode())
 
     def process_authorize(self, jsonMsg):
         # Need to check the user and password if it valid, skipped for now
+        id = jsonMsg["id"]
         minerInfos = jsonMsg["params"][0].split('.')
         self.miner_wallet = minerInfos[0]
-        print("miner wallet " + self.miner_wallet)
-        self.send_success_reply()
+        logging.info(f"miner wallet {self.miner_wallet}")
+        self.send_success_reply(id)
 
     def send_extranonce_reply(self):
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.set_extranonce"
-        dictOfReply["params"] = [0xaf4c]
+        dictOfReply["params"] = ["00000000af4c"]
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
-        print("Server Reply >" + strReply)
+        logging.info("Server Reply > " + strReply)
         self.transport.write(strReply.encode())
 
     def process_submit(self, jsonMsg):
+        work = None
+        mix_digest = None
+        miner_wallet = self.miner_wallet
+        worker_name = None
+        hash_result = None
+        _worker = None
+        if jsonMsg["id"] is None:
+            logging.warning("Submitted result message without id")
+            return
+
+        id = jsonMsg["id"]
         if self.stratumMiner._stratusVersion == STRATUM_BASIC:
             nonce = jsonMsg["params"][2]
             nonce_int = h2i(nonce)            
@@ -158,14 +171,14 @@ class StratumServerProtocol(asyncio.Protocol):
             boundary = self.stratumMiner._boundary
             mix_digest_bytes = h2b(mix_digest)
             worker_name = jsonMsg["worker"]
-            miner_wallet = self.miner_wallet
+            _worker = miner.Worker.get_or_create(miner_wallet, worker_name)
 
             # 3. check work existing
             work = pow.PowWork.find_work_by_header_boundary(header=header, boundary=boundary,
                                                             check_expired=True)
             if not work:
                 logging.warning(f"work not found or expired, {header} {boundary}")
-                #_worker.update_stat(inc_failed=1)
+                _worker.update_stat(inc_failed=1)
                 return False
 
             # 4. verify result
@@ -176,37 +189,71 @@ class StratumServerProtocol(asyncio.Protocol):
                                                 nonce_int, boundary_bytes)
             if not hash_result:
                 logging.warning(f"wrong result from miner {miner_wallet}-{worker_name}, {work}")
-                #_worker.update_stat(inc_failed=1)
+                _worker.update_stat(inc_failed=1)
                 return False
 
-            # 5. check the result if lesser than old one
-            if work.finished:
-                prev_result = pow.PowResult.get_pow_result(work.header, work.boundary)
-                if prev_result:
-                    if prev_result.verified:
-                        logging.info(f"submitted too late, work is verified. {work.header} {work.boundary}")
-                        #_worker.update_stat(inc_failed=1)
-                        return False
-
-                    if ethash.is_less_or_equal(prev_result.hash_result, hash_result):
-                        logging.info(f"submitted result > old result, ignored. {work.header} {work.boundary}")
-                        #_worker.update_stat(inc_failed=1)
-                        return False
-
-            # 6. save to database
-            hash_result_str = b2h(hash_result, prefix="0x")
-            if not work.save_result(nonce, mix_digest, hash_result_str, miner_wallet, worker_name):
-                logging.warning(f"failed to save result for miner "
-                                f"{miner_wallet}-{worker_name}, {work}")
+        elif self.stratumMiner._stratusVersion == STRATUM_NICEHASH:
+            if jsonMsg["params"] is None:
+                logging.critical("The message is without params section")
                 return False
 
-            logging.critical(f"Work submitted, {work.header} {work.boundary}")
+            worker_name = jsonMsg["params"][0]
+            strJobId = jsonMsg["params"][1]
+            joibId = ObjectId(strJobId)
+            nonce = jsonMsg["params"][2]
+            nonce_int = h2i(nonce)
+            logging.info(f"worker_name {worker_name}")
+            _worker = miner.Worker.get_or_create(miner_wallet, worker_name)
 
-            self.send_success_reply()
+            # 3. check work existing
+            work = pow.PowWork.find_work_by_id(joibId, check_expired=True)
+            if not work:
+                logging.warning(f"work not found or expired, {strJobId}")
+                _worker.update_stat(inc_failed=1)
+                return False
 
-            #_worker.update_stat(inc_finished=1)
+            # 4. verify result
+            seed, header = h2b(work.seed), h2b(work.header)
+            calc_mix_digest, calc_result = ethash.pow_hash(work.block_num, header, nonce_int)
+            boundary_bytes = h2b(work.boundary)
+            block_num = ethash.seed_to_block_num(seed)
+            hash_result = ethash.verify_pow_work(block_num, header, calc_mix_digest,
+                                                nonce_int, boundary_bytes)
+            if not hash_result:
+                logging.warning(f"wrong result from miner {miner_wallet}-{worker_name}, {work}")
+                _worker.update_stat(inc_failed=1)
+                return False
 
-            # 6. todo: miner reward
-            return True
+            mix_digest = b2h(calc_mix_digest)
+
+        # 5. check the result if lesser than old one
+        if work.finished:
+            prev_result = pow.PowResult.get_pow_result(work.header, work.boundary)
+            if prev_result:
+                if prev_result.verified:
+                    logging.info(f"submitted too late, work is verified. {work.header} {work.boundary}")
+                    _worker.update_stat(inc_failed=1)
+                    return False
+
+                if ethash.is_less_or_equal(prev_result.hash_result, hash_result):
+                    logging.info(f"submitted result > old result, ignored. {work.header} {work.boundary}")
+                    _worker.update_stat(inc_failed=1)
+                    return False
+
+        # 6. save to database
+        hash_result_str = b2h(hash_result, prefix="0x")
+        if not work.save_result(nonce, mix_digest, hash_result_str, miner_wallet, worker_name):
+            logging.warning(f"failed to save result for miner "
+                            f"{miner_wallet}-{worker_name}, {work}")
+            return False
+
+        logging.critical(f"Work submitted, {work.header} {work.boundary}")
+
+        self.send_success_reply(id)
+
+        _worker.update_stat(inc_finished=1)
+
+        # 6. todo: miner reward
+        return True
 
 
