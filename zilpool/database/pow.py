@@ -181,10 +181,8 @@ class PowWork(ModelMixin, mg.Document):
                  pub_key="", signature="", timeout=120, pow_fee=0.0):
         start_time = datetime.utcnow()
         expire_time = start_time + timedelta(seconds=timeout)
-        print("block_num " + str(block_num))
         seed = ethash.block_num_to_seed(block_num)
         seed = crypto.bytes_to_hex_str_0x(seed)
-        print("new_work seed " + str(seed))
         return cls.create(
             header=header, seed=seed, boundary=boundary, pow_fee=pow_fee,
             pub_key=pub_key, signature=signature, block_num=block_num,
@@ -212,6 +210,14 @@ class PowWork(ModelMixin, mg.Document):
         if check_expired:
             query = query & Q(expire_time__gte=datetime.utcnow())
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one
+        return cursor.first()
+
+    @classmethod
+    def find_work_by_id(cls, id: object, check_expired=True):
+        query = Q(pk=id)
+        cursor = cls.objects(query)   # default to get the oldest one
+        if check_expired:
+            query = query & Q(expire_time__gte=datetime.utcnow())
         return cursor.first()
 
     @classmethod
