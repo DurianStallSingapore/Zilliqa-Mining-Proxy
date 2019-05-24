@@ -124,7 +124,6 @@ def init_apis(config):
             work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
             if work is not None:
-                stratumMiner.notify_difficulty(work.boundary)
                 if work.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
                     stratumMiner.notify_work(work)
 
