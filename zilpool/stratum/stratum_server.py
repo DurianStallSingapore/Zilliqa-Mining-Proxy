@@ -21,6 +21,7 @@ class StratumMiner:
         self._transport = transport
         self._stratusVersion = stratumVersion
         self._boundary = None
+        self._miningAtBlock = dict()
 
     def notify_difficulty(self, diff):
         self._boundary = diff
@@ -38,6 +39,11 @@ class StratumMiner:
         self._transport.write(strReply.encode())
 
     def notify_work(self, work):
+        if work.block_num in self._miningAtBlock and self._miningAtBlock[work.block_num]:
+            logging.info(f"Miner still mining at block {work.block_num}, no need send new work")
+            return
+        self.notify_difficulty(work.boundary)
+
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.notify"
@@ -48,7 +54,11 @@ class StratumMiner:
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info(f"Server Reply {strReply}")
+        self._miningAtBlock[work.block_num] = True
         self._transport.write(strReply.encode())
+
+    def set_workDone(self, work):
+        self._miningAtBlock[work.block_num] = False
 
 class StratumServerProtocol(asyncio.Protocol):
     def __init__(self):
@@ -92,9 +102,6 @@ class StratumServerProtocol(asyncio.Protocol):
                     self.process_submit(jsonMsg)
             except ValueError:
                 logging.critical(f"Failed to parse json message {subMessage}")
-
-    def notify(self, data):
-        self.transport.write("Notify something")
 
     def process_subscribe(self, jsonMsg):
         stratumVersion = STRATUM_BASIC
@@ -252,7 +259,7 @@ class StratumServerProtocol(asyncio.Protocol):
         self.send_success_reply(id)
 
         _worker.update_stat(inc_finished=1)
-
+        self.stratumMiner.set_workDone(work)
         # 6. todo: miner reward
         return True
 
