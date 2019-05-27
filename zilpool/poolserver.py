@@ -134,7 +134,7 @@ async def start_stradum(config):
     loop = asyncio.get_running_loop()
     server = await loop.create_server(add_protocol(), host, port)
 
-    logging.critical(f"Stratum server running at: {host}:{port}")
+    logging.info(f"Stratum server running at: {host}:{port}")
 
     async with server:
         await server.serve_forever()
