@@ -67,13 +67,6 @@ class StratumServerProtocol(asyncio.Protocol):
         self.stratumMiner = None
         self.subscribed = False
         self.miner_wallet = None
-
-    async def start(self):
-        loop = asyncio.get_running_loop()
-        server = await loop.create_server(self, '127.0.0.1', 9999)
-
-        async with server:
-            await server.serve_forever()
     
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
