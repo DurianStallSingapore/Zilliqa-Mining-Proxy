@@ -121,18 +121,17 @@ def update_config(site, config):
             # set auto generated website url
             website_config["url"] = web_url
 
-def add_protocol():
+def add_stratum_protocol():
     proto = lambda: StratumServerProtocol()
-    #stratumMiners.append(proto)
     return proto
 
-async def start_stradum(config):
+async def start_stratum(config):
     # run stratum server
     port = config["stratum_server"].get("port", "33456")
     host = config["stratum_server"].get("host", "0.0.0.0")
 
     loop = asyncio.get_running_loop()
-    server = await loop.create_server(add_protocol(), host, port)
+    server = await loop.create_server(add_stratum_protocol(), host, port)
 
     logging.info(f"Stratum server running at: {host}:{port}")
 
@@ -178,13 +177,6 @@ async def start_servers(conf_file=None, host=None, port=None):
     runner = web.AppRunner(app)
     loop = asyncio.get_event_loop()
 
-    #async with server:
-    #    await server.serve_forever()
-
-    #await asyncio.create_task(start_stradum())
-    #stratumServer = stratum_server.StratumServerProtocol()
-    #loop.run_until_complete(stratumServer.start())
-
     await runner.setup()
     #loop.run_until_complete(runner.setup())
     site = web.TCPSite(runner, host=host, port=port)
@@ -194,9 +186,5 @@ async def start_servers(conf_file=None, host=None, port=None):
     # update config
     update_config(site, config)
 
-    await start_stradum(config)
-    #server = StratumServerProtocol
-    #await server.start(server)
-
-    # start ioloop
-    #loop.run_forever()
+    # start stratum server
+    await start_stratum(config)
