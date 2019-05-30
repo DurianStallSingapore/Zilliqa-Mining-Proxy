@@ -125,7 +125,7 @@ def init_apis(config):
                                          max_dispatch=max_dispatch)
             if dispatchWork is not None:
                 if dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
-                    stratumMiner.notify_work(dispatchWork)
+                    stratumMiner.notify_work(dispatchWork, True)
 
         logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
 

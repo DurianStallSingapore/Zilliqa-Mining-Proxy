@@ -21,6 +21,8 @@ pool servers
 import logging
 from logging import handlers
 
+import time
+
 import asyncio
 from json import dumps
 from functools import partial
@@ -30,6 +32,10 @@ from jsonrpcserver.response import ExceptionResponse
 
 from zilpool import backgound
 from zilpool.stratum.stratum_server import *
+
+from zilpool.common import utils, blockchain
+from zilpool.pyzil import crypto
+from zilpool.nicehash import NiceHashClient
 
 # setup root logger
 FORMATTER = logging.Formatter(
@@ -42,6 +48,8 @@ rootLogger.setLevel(logging.INFO)
 std_handler = logging.StreamHandler()
 std_handler.setFormatter(FORMATTER)
 rootLogger.addHandler(std_handler)
+
+isNinceHashOrderPlaced=False
 
 def setup_logging(log_config):
     level = log_config.get("level", "info").upper()
@@ -121,8 +129,8 @@ def update_config(site, config):
             # set auto generated website url
             website_config["url"] = web_url
 
-def add_stratum_protocol():
-    proto = lambda: StratumServerProtocol()
+def add_stratum_protocol(config):
+    proto = lambda: StratumServerProtocol(config)
     return proto
 
 async def start_stratum(config):
@@ -131,12 +139,83 @@ async def start_stratum(config):
     host = config["stratum_server"].get("host", "0.0.0.0")
 
     loop = asyncio.get_running_loop()
-    server = await loop.create_server(add_stratum_protocol(), host, port)
+    server = await loop.create_server(add_stratum_protocol(config), host, port)
 
     logging.info(f"Stratum server running at: {host}:{port}")
 
     async with server:
         await server.serve_forever()
+
+def schedule_coroutine(target, *, loop=None):
+    """Schedules target coroutine in the given event loop
+
+    If not given, *loop* defaults to the current thread's event loop
+
+    Returns the scheduled task.
+    """
+    if asyncio.iscoroutine(target):
+        return asyncio.ensure_future(target, loop=loop)
+    raise TypeError("target must be a coroutine, "
+                    "not {!r}".format(type(target)))
+
+async def create_dummy_work():
+    DUMMY_WORK_INTERVAL = 15
+    while True:
+        logging.info("Run to create dummy work")
+
+        if len(stratumMiners) <= 0:
+            await asyncio.sleep(DUMMY_WORK_INTERVAL)
+            continue
+
+        txBlock = await blockchain.Zilliqa.get_current_txblock()
+        txBlockMod = txBlock % 100
+        if txBlockMod == 99 or txBlockMod == 0:
+            logging.info(f"Block number {txBlock}, don't send dummy work")
+            await asyncio.sleep(DUMMY_WORK_INTERVAL)
+            continue
+
+        header = crypto.bytes_to_hex_str(crypto.rand_bytes(32))
+        dsBlockNum = await blockchain.Zilliqa.get_current_dsblock()
+        difficulty = await blockchain.Zilliqa.get_difficulty()
+        boundary = crypto.bytes_to_hex_str(ethash.difficulty_to_boundary_divided(difficulty))
+        pubKeyStr = "03FB81D476B3CF161AFD1AE0B861ECC907111AB891DF82028DD3D3085E2460A574"
+        privKeyStr = "224B31816F0B529F21B14D9F04C42E7F277A024758A57BB6E1B3DEBF39A38E72"
+        signature = "C6B47C86A42F5F0B62DD2E6485733EF1D96EA82DD8D200EF46BD4100D133E16293B0089AE77AF6C3AF048F0D65911A254722B42CDF4C3514CE11F33FD78B2A65"
+        work = pow.PowWork.new_work(header, dsBlockNum, boundary,
+                                    pub_key=pubKeyStr, signature=signature,
+                                    timeout=60, pow_fee=0)
+
+        for stratumMiner in stratumMiners:
+            stratumMiner.notify_work(work, False)
+
+        await asyncio.sleep(DUMMY_WORK_INTERVAL)
+
+async def nice_hash_task(config):
+    client = NiceHashClient(config.nicehash)
+    global isNinceHashOrderPlaced
+
+    while True:
+        txBlock = await blockchain.Zilliqa.get_current_txblock()
+        logging.info(f"Current block number {txBlock}")
+        txBlockMod = txBlock % 100
+        blockToPlaceOrder = config.nicehash.get("place_order_block", 97)
+        if txBlockMod == blockToPlaceOrder and isNinceHashOrderPlaced is not True:
+            logging.info(f"Start place order in nicehash")
+            # create order
+            order_number = await client.create_order(amount=0.02, price=4.00, limit=0.1)
+            logging.info(f"Order number {order_number}")
+            isNinceHashOrderPlaced = True
+        elif isNinceHashOrderPlaced and txBlockMod >= blockToPlaceOrder:
+            logging.info(f"Keep my order on top")
+            await client.keep_my_orders_top()
+        elif txBlockMod == 1 and isNinceHashOrderPlaced:
+            logging.info(f"Stop all of my orders")
+            await client.stop_all()
+            isNinceHashOrderPlaced = False
+
+
+        await asyncio.sleep(10)
+
 
 async def start_servers(conf_file=None, host=None, port=None):
     from zilpool.common import utils, mail, blockchain
@@ -185,6 +264,9 @@ async def start_servers(conf_file=None, host=None, port=None):
 
     # update config
     update_config(site, config)
+
+    schedule_coroutine(nice_hash_task(config), loop=loop)
+    schedule_coroutine(create_dummy_work(), loop=loop)
 
     # start stratum server
     await start_stratum(config)

@@ -11,6 +11,7 @@ from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
 from zilpool.pyzil.crypto import hex_str_to_int as h2i
 from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
 
+from zilpool.nicehash import NiceHashClient
 
 stratumMiners = []
 
@@ -23,6 +24,7 @@ class StratumMiner:
         self._stratusVersion = stratumVersion
         self._boundary = None
         self._miningAtBlock = dict()
+        self._miningRealJob = False
         self._targetDifficulty = 0
 
     def notify_difficulty(self, diff):
@@ -44,10 +46,11 @@ class StratumMiner:
         self._transport.write(strReply.encode())
         self._targetDifficulty = target
 
-    def notify_work(self, work):
-        if work.block_num in self._miningAtBlock and self._miningAtBlock[work.block_num]:
-            logging.info(f"Miner still mining at block {work.block_num}, no need send new work")
-            return False
+    def notify_work(self, work, realJob):
+        if self._miningRealJob and work.block_num in self._miningAtBlock and self._miningAtBlock[work.block_num]:
+            logging.info(f"Miner still mining at real job for block {work.block_num}, no need send new work")
+            return
+
         self.notify_difficulty(work.boundary)
 
         dictOfReply = dict()
@@ -60,6 +63,7 @@ class StratumMiner:
         header = work.header
         if header[0:2] == '0x' or header[0:2] == '0X':
             header = header[2:]
+
         if self._stratusVersion == STRATUM_BASIC:            
             dictOfReply["params"] = [str(work.pk), header, seed, work.boundary]
         elif self._stratusVersion == STRATUM_NICEHASH:
@@ -67,15 +71,18 @@ class StratumMiner:
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info(f"Server Reply {strReply}")
-        self._miningAtBlock[work.block_num] = True
+        
         self._transport.write(strReply.encode())
         return True
+
+        self._miningRealJob = realJob
+        self._miningAtBlock[work.block_num] = True
 
     def set_workDone(self, work):
         self._miningAtBlock[work.block_num] = False
 
 class StratumServerProtocol(asyncio.Protocol):
-    def __init__(self):
+    def __init__(self, config):
         self._server = None
         self.transport = None
         self.stratumMiner = None
@@ -90,6 +97,7 @@ class StratumServerProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         logging.critical("Connection lost")
+        stratumMiners.remove(self.stratumMiner)
 
     def data_received(self, data):
         message = data.decode()
@@ -134,7 +142,7 @@ class StratumServerProtocol(asyncio.Protocol):
 
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
-        logging.info("Server Reply >" + strReply)
+        logging.info("Server Reply > " + strReply)
         self.transport.write(strReply.encode())
 
     def send_success_reply(self, id):
@@ -245,6 +253,8 @@ class StratumServerProtocol(asyncio.Protocol):
 
             mix_digest = b2h(calc_mix_digest)
 
+        self.stratumMiner.set_workDone(work)
+
         # 5. check the result if lesser than old one
         if work.finished:
             prev_result = pow.PowResult.get_pow_result(work.header, work.boundary)
@@ -271,7 +281,11 @@ class StratumServerProtocol(asyncio.Protocol):
         self.send_success_reply(id)
 
         _worker.update_stat(inc_finished=1)
-        self.stratumMiner.set_workDone(work)
+
+        #logging.info("Stopping all nice hash orders")
+        #client = NiceHashClient(self.config.nicehash)
+        #asyncio.create_task(client.stop_all())
+
         # 6. todo: miner reward
         return True
 
