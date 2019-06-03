@@ -159,8 +159,10 @@ class StratumServerProtocol(asyncio.Protocol):
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.set_extranonce"
+
         self.strExtraNonceHex = hex(random.randrange(0xffff))[2:]
         dictOfReply["params"] = [self.strExtraNonceHex]
+
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info("Server Reply > " + strReply)
