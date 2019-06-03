@@ -106,9 +106,9 @@ def init_apis(config):
             return False
 
         count = pow.PowWork.count(pub_key=pub_key, block_num=block_num)
-        # if count >= 2:
-        #     logging.warning(f"too many PoW requests from {block_num} {pub_key}")
-        #     return False
+        if count >= 2:
+            logging.warning(f"too many PoW requests from {block_num} {pub_key}")
+            return False
 
         work = pow.PowWork.new_work(header, block_num, boundary,
                                     pub_key=pub_key, signature=signature,
