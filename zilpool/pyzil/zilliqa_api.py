@@ -20,9 +20,12 @@
 
 import ssl
 import asyncio
+import logging
+import concurrent
 
 from aiohttp import ClientSession
 from jsonrpcclient.exceptions import JsonRpcClientError
+from aiohttp.client_exceptions import ClientConnectorError
 from jsonrpcclient.clients.aiohttp_client import AiohttpClient
 
 
@@ -84,6 +87,15 @@ class API:
                     )
 
             raise e
+        except ClientConnectorError as e:
+            logging.warning(f"Client connect exception captured, please check network or Zilliqa API server. Exception: {e}")
+        except asyncio.CancelledError as e:
+            logging.warning(f"Cancelled exception captured: {e}")
+        except asyncio.TimeoutError as e:
+            logging.warning("Timeout exception captured, please check network or Zilliqa API server")
+        except:
+            logging.warning(f"Unknown exception captured: {e}")
+
 
 
 if "__main__" == __name__:
