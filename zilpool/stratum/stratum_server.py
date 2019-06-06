@@ -23,6 +23,7 @@ class StratumMiner:
         self._stratusVersion = stratumVersion
         self._boundary = None
         self._miningAtBlock = dict()
+        self._targetDifficulty = 0
 
     def notify_difficulty(self, diff):
         self._boundary = diff
@@ -30,6 +31,9 @@ class StratumMiner:
             return
         DIFF_BASE = 0x00000000ffff0000000000000000000000000000000000000000000000000000
         target = DIFF_BASE / int(diff, 16)
+        if self._targetDifficulty == target:
+            logging.info("The difficulty is the same, no need send again")
+            return
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.set_difficulty"
@@ -38,6 +42,7 @@ class StratumMiner:
         strReply += '\n'
         logging.info(f"Server Reply {strReply}")
         self._transport.write(strReply.encode())
+        self._targetDifficulty = target
 
     def notify_work(self, work):
         if work.block_num in self._miningAtBlock and self._miningAtBlock[work.block_num]:
