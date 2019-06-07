@@ -53,10 +53,17 @@ class StratumMiner:
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.notify"
+        seed = work.seed
+        if seed[0:2] == '0x' or seed[0:2] == '0X':
+            seed = seed[2:]
+
+        header = work.header
+        if header[0:2] == '0x' or header[0:2] == '0X':
+            header = header[2:]
         if self._stratusVersion == STRATUM_BASIC:            
-            dictOfReply["params"] = [str(work.pk), work.header, work.seed, work.boundary]
+            dictOfReply["params"] = [str(work.pk), header, seed, work.boundary]
         elif self._stratusVersion == STRATUM_NICEHASH:
-            dictOfReply["params"] = [str(work.pk), work.seed, work.header, True]
+            dictOfReply["params"] = [str(work.pk), seed, header, True]
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info(f"Server Reply {strReply}")
@@ -91,13 +98,13 @@ class StratumServerProtocol(asyncio.Protocol):
                 break
             try:
                 jsonMsg = json.loads(subMessage)
-                if (jsonMsg['id'] == 1 and jsonMsg["method"] == "mining.subscribe"):
+                if jsonMsg["method"] == "mining.subscribe":
                     self.process_subscribe(jsonMsg)
-                elif (jsonMsg['id'] == 3 and jsonMsg["method"] == "mining.authorize"):
+                elif jsonMsg["method"] == "mining.authorize":
                     self.process_authorize(jsonMsg)
-                elif (jsonMsg['id'] == 2 and jsonMsg["method"] == "mining.extranonce.subscribe"):
+                elif jsonMsg["method"] == "mining.extranonce.subscribe":
                     self.send_extranonce_reply()
-                elif(jsonMsg["method"] == "mining.submit"):
+                elif jsonMsg["method"] == "mining.submit":
                     self.process_submit(jsonMsg)
             except ValueError:
                 logging.critical(f"Failed to parse json message {subMessage}")
