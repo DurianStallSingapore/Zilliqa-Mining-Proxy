@@ -53,6 +53,7 @@ class StratumMiner:
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.notify"
+
         seed = work.seed
         if seed[0:2] == '0x' or seed[0:2] == '0X':
             seed = seed[2:]
@@ -60,6 +61,7 @@ class StratumMiner:
         header = work.header
         if header[0:2] == '0x' or header[0:2] == '0X':
             header = header[2:]
+
         if self._stratusVersion == STRATUM_BASIC:            
             dictOfReply["params"] = [str(work.pk), header, seed, work.boundary]
         elif self._stratusVersion == STRATUM_NICEHASH:
@@ -106,6 +108,8 @@ class StratumServerProtocol(asyncio.Protocol):
                     self.send_extranonce_reply()
                 elif jsonMsg["method"] == "mining.submit":
                     self.process_submit(jsonMsg)
+                elif jsonMsg["method"] == "eth_submitLogin":
+                    self.process_submit_login(jsonMsg)
             except ValueError:
                 logging.critical(f"Failed to parse json message {subMessage}")
 
@@ -160,6 +164,15 @@ class StratumServerProtocol(asyncio.Protocol):
         dictOfReply["method"] = "mining.set_extranonce"
         self.strExtranoceHex = hex(random.randrange(0xffff))[2:]
         dictOfReply["params"] = [self.strExtranoceHex]
+        strReply = json.dumps(dictOfReply)
+        strReply += '\n'
+        logging.info("Server Reply > " + strReply)
+        self.transport.write(strReply.encode())
+
+    def process_submit_login(self, jsonMsg):
+        dictOfReply = dict()
+        dictOfReply["id"] = jsonMsg["id"]
+        dictOfReply["result"] = True
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info("Server Reply > " + strReply)
