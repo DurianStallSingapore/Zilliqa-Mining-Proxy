@@ -121,11 +121,11 @@ def init_apis(config):
             max_dispatch = config.site_settings.max_dispatch
             inc_expire = config.site_settings.inc_expire
 
-            work = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
+            dispatchWork = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
                                          max_dispatch=max_dispatch)
-            if work is not None:
-                if work.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
-                    stratumMiner.notify_work(work)
+            if dispatchWork is not None:
+                if dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
+                    stratumMiner.notify_work(dispatchWork)
 
         logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
 
