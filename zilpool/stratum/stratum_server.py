@@ -80,7 +80,7 @@ class StratumServerProtocol(asyncio.Protocol):
         self.stratumMiner = None
         self.subscribed = False
         self.miner_wallet = None
-        self.strExtranoceHex = None
+        self.strExtraNonceHex = None
     
     def connection_made(self, transport):
         peername = transport.get_extra_info('peername')
@@ -126,8 +126,8 @@ class StratumServerProtocol(asyncio.Protocol):
         replyArray1 = ["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f", "EthereumStratum/1.0.0"]
         dictOfReply["result"].append(replyArray1)
 
-        replyArray2 = hex(random.randrange(0xffff))[2:]
-        dictOfReply["result"].append(replyArray2)
+        self.strExtraNonceHex = hex(random.randrange(0xffff))[2:]
+        dictOfReply["result"].append(self.strExtraNonceHex)
 
         dictOfReply["error"] = None
 
@@ -158,8 +158,8 @@ class StratumServerProtocol(asyncio.Protocol):
         dictOfReply = dict()
         dictOfReply["id"] = None
         dictOfReply["method"] = "mining.set_extranonce"
-        self.strExtranoceHex = hex(random.randrange(0xffff))[2:]
-        dictOfReply["params"] = [self.strExtranoceHex]
+        self.strExtraNonceHex = hex(random.randrange(0xffff))[2:]
+        dictOfReply["params"] = [self.strExtraNonceHex]
         strReply = json.dumps(dictOfReply)
         strReply += '\n'
         logging.info("Server Reply > " + strReply)
@@ -215,8 +215,8 @@ class StratumServerProtocol(asyncio.Protocol):
             strJobId = jsonMsg["params"][1]
             joibId = ObjectId(strJobId)
             nonce = jsonMsg["params"][2]
-            if self.strExtranoceHex is not None:
-                nonce = self.strExtranoceHex + nonce
+            if self.strExtraNonceHex is not None:
+                nonce = self.strExtraNonceHex + nonce
             nonce_int = h2i(nonce)
             logging.info(f"worker_name {worker_name}")
             _worker = miner.Worker.get_or_create(miner_wallet, worker_name)
