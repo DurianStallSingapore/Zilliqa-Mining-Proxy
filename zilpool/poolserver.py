@@ -202,7 +202,7 @@ async def nice_hash_task(config):
         if txBlockMod == blockToPlaceOrder and isNinceHashOrderPlaced is not True:
             logging.info(f"Start place order in nicehash")
             # create order
-            order_number = await client.create_order(amount=0.02, price=4.00, limit=0.1)
+            order_number = await client.create_order(amount=0.02, price=2.00, limit=1)
             logging.info(f"Order number {order_number}")
             isNinceHashOrderPlaced = True
         elif isNinceHashOrderPlaced and txBlockMod >= blockToPlaceOrder:

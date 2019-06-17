@@ -49,7 +49,7 @@ class StratumMiner:
     def notify_work(self, work, realJob):
         if self._miningRealJob and work.block_num in self._miningAtBlock and self._miningAtBlock[work.block_num]:
             logging.info(f"Miner still mining at real job for block {work.block_num}, no need send new work")
-            return
+            return False
 
         self.notify_difficulty(work.boundary)
 
@@ -73,10 +73,10 @@ class StratumMiner:
         logging.info(f"Server Reply {strReply}")
         
         self._transport.write(strReply.encode())
-        return True
-
         self._miningRealJob = realJob
         self._miningAtBlock[work.block_num] = True
+
+        return True
 
     def set_workDone(self, work):
         self._miningAtBlock[work.block_num] = False
