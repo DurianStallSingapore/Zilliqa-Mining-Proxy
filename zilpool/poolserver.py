@@ -29,6 +29,7 @@ from functools import partial
 from aiohttp import web
 from jsonrpcserver import async_dispatch
 from jsonrpcserver.response import ExceptionResponse
+from datetime import datetime
 
 from zilpool import backgound
 from zilpool.stratum.stratum_server import *
@@ -212,6 +213,16 @@ async def notify_work_task(config):
                     dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire)
                     if dispatchWork.dispatched == max_dispatch:
                         break
+        else:
+            global isNinceHashOrderPlaced
+            if isNinceHashOrderPlaced:
+                latest_work = pow.PowWork.get_latest_work()
+                if latest_work.expire_time < datetime.utcnow():
+                    logging.warning("No work to dispatch and all job expired, stop all nicehash orders")
+                    client = NiceHashClient(config.nicehash)
+                    await client.stop_all()
+                    isNinceHashOrderPlaced = False
+
 
         await asyncio.sleep(1)
 
