@@ -287,8 +287,8 @@ class PowWork(ModelMixin, mg.Document):
                 if now < work.expire_time:
                     work = work.update(dispatched=1, start_time=now)
             else:
-                logging.warning(f"reset dispatched to retry, {self.header} - {self.boundary}")
-                work = work.update(dispatched=1, start_time=new_start_time)
+                logging.warning(f"Max dispatch reached, {self.header} - {self.boundary}")
+                return None
 
         return work
 

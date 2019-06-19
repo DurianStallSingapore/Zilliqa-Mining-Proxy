@@ -158,7 +158,7 @@ def schedule_coroutine(target, *, loop=None):
     raise TypeError("target must be a coroutine, "
                     "not {!r}".format(type(target)))
 
-async def create_dummy_work():
+async def create_dummy_work(config):
     DUMMY_WORK_INTERVAL = 15
     while True:
         logging.info("Run to create dummy work")
@@ -185,10 +185,35 @@ async def create_dummy_work():
                                     pub_key=pubKeyStr, signature=signature,
                                     timeout=60, pow_fee=0)
 
+        max_dispatch = config.site_settings.max_dispatch
+        work = work.update(dispatched=max_dispatch)
         for stratumMiner in stratumMiners:
             stratumMiner.notify_work(work, False)
 
         await asyncio.sleep(DUMMY_WORK_INTERVAL)
+
+async def notify_work_task(config):
+    while True:
+        if len(stratumMiners) <= 0:
+            await asyncio.sleep(15)
+            continue
+
+        min_fee = config.site_settings.min_fee
+        max_dispatch = config.site_settings.max_dispatch
+        inc_expire = config.site_settings.inc_expire
+
+        dispatchWork = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
+                                                max_dispatch=max_dispatch)
+
+        if dispatchWork:
+            logging.critical(f"Dispatch work {dispatchWork.header} requested from {dispatchWork.pub_key}")
+            for stratumMiner in stratumMiners:
+                if stratumMiner.notify_work(dispatchWork, True):
+                    dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire)
+                    if dispatchWork.dispatched == max_dispatch:
+                        break
+
+        await asyncio.sleep(1)
 
 async def nice_hash_task(config):
     client = NiceHashClient(config.nicehash)
@@ -212,7 +237,6 @@ async def nice_hash_task(config):
             logging.info(f"Stop all of my orders")
             await client.stop_all()
             isNinceHashOrderPlaced = False
-
 
         await asyncio.sleep(10)
 
@@ -266,7 +290,8 @@ async def start_servers(conf_file=None, host=None, port=None):
     update_config(site, config)
 
     schedule_coroutine(nice_hash_task(config), loop=loop)
-    schedule_coroutine(create_dummy_work(), loop=loop)
+    schedule_coroutine(create_dummy_work(config), loop=loop)
+    schedule_coroutine(notify_work_task(config), loop=loop)
 
     # start stratum server
     await start_stratum(config)

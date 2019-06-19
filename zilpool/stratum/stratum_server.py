@@ -79,6 +79,7 @@ class StratumMiner:
         return True
 
     def set_workDone(self, work):
+        self._miningRealJob = False
         self._miningAtBlock[work.block_num] = False
 
 class StratumServerProtocol(asyncio.Protocol):
@@ -281,10 +282,6 @@ class StratumServerProtocol(asyncio.Protocol):
         self.send_success_reply(id)
 
         _worker.update_stat(inc_finished=1)
-
-        #logging.info("Stopping all nice hash orders")
-        #client = NiceHashClient(self.config.nicehash)
-        #asyncio.create_task(client.stop_all())
 
         # 6. todo: miner reward
         return True

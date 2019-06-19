@@ -116,16 +116,18 @@ def init_apis(config):
         # update pow window
         pow.PoWWindow.update_pow_window(work)
 
-        for stratumMiner in stratumMiners:
-            min_fee = config.site_settings.min_fee
-            max_dispatch = config.site_settings.max_dispatch
-            inc_expire = config.site_settings.inc_expire
+        min_fee = config.site_settings.min_fee
+        max_dispatch = config.site_settings.max_dispatch
+        inc_expire = config.site_settings.inc_expire
 
-            dispatchWork = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
-                                         max_dispatch=max_dispatch)
-            if dispatchWork is not None:
-                if dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire):
-                    stratumMiner.notify_work(dispatchWork, True)
+        dispatchWork = pow.PowWork.get_new_works(count=1, min_fee=min_fee,
+                                                max_dispatch=max_dispatch)
+
+        if len(stratumMiners) > 0:
+            for stratumMiner in stratumMiners:
+                if stratumMiner.notify_work(dispatchWork, True):
+                    dispatchWork.increase_dispatched(max_dispatch, inc_seconds=inc_expire)
+                    break
 
         logging.critical(f"PoW work {block_num} {header} requested from {pub_key}")
 
