@@ -11,8 +11,6 @@ from zilpool.pyzil.crypto import hex_str_to_bytes as h2b
 from zilpool.pyzil.crypto import hex_str_to_int as h2i
 from zilpool.pyzil.crypto import bytes_to_hex_str as b2h
 
-from zilpool.nicehash import NiceHashClient
-
 stratumMiners = []
 
 STRATUM_BASIC = 0

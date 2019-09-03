@@ -36,7 +36,7 @@ from zilpool.stratum.stratum_server import *
 
 from zilpool.common import utils, blockchain
 from zilpool.pyzil import crypto
-from zilpool.nicehash import NiceHashClient
+from zilpool.nicehash import *
 
 # setup root logger
 FORMATTER = logging.Formatter(
@@ -219,16 +219,25 @@ async def notify_work_task(config):
                 latest_work = pow.PowWork.get_latest_work()
                 if latest_work.expire_time < datetime.utcnow():
                     logging.warning("No work to dispatch and all job expired, stop all nicehash orders")
-                    client = NiceHashClient(config.nicehash)
-                    await client.stop_all()
+                    privApi = private_api(config.nicehash)
+                    privApi.stop_all()
                     isNinceHashOrderPlaced = False
 
 
         await asyncio.sleep(1)
 
 async def nice_hash_task(config):
-    client = NiceHashClient(config.nicehash)
+    pubApi = public_api(config.nicehash["host"], True)
+
+    # # Get all algorithms
+    algorithms = pubApi.get_algorithms()
+    logging.info(algorithms)
+
+    privApi = private_api(config.nicehash, algorithms)
     global isNinceHashOrderPlaced
+
+    resp = privApi.set_price_hashpower_order('fadf48bc-edcc-4656-beb9-372fedbc7bb4', 2.1, config.nicehash['algo'], algorithms)
+    logging.warning(f"NiceHash: set price response {resp}")
 
     while True:
         txBlock = await blockchain.Zilliqa.get_current_txblock()
@@ -238,15 +247,16 @@ async def nice_hash_task(config):
         if txBlockMod == blockToPlaceOrder and isNinceHashOrderPlaced is not True:
             logging.info(f"Start place order in nicehash")
             # create order
-            order_number = await client.create_order(amount=0.02, price=2.00, limit=1)
-            logging.info(f"Order number {order_number}")
+            orderResponse = privApi.create_hashpower_order(config.nicehash["location"], "STANDARD", config.nicehash["algo"],
+            price=2.00, limit=1, amount=0.02, pool_id=config.nicehash["pool_id"])
+            logging.info(f"Order response {orderResponse}")
             isNinceHashOrderPlaced = True
         elif isNinceHashOrderPlaced and txBlockMod >= blockToPlaceOrder:
             logging.info(f"Keep my order on top")
-            await client.keep_my_orders_top()
+            privApi.keep_my_orders_top()
         elif txBlockMod == 1 and isNinceHashOrderPlaced:
             logging.info(f"Stop all of my orders")
-            await client.stop_all()
+            privApi.stop_all()
             isNinceHashOrderPlaced = False
 
         await asyncio.sleep(10)
