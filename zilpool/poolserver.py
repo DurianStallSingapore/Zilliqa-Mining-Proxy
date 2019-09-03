@@ -236,9 +236,6 @@ async def nice_hash_task(config):
     privApi = private_api(config.nicehash, algorithms)
     global isNinceHashOrderPlaced
 
-    resp = privApi.set_price_hashpower_order('fadf48bc-edcc-4656-beb9-372fedbc7bb4', 2.1, config.nicehash['algo'], algorithms)
-    logging.warning(f"NiceHash: set price response {resp}")
-
     while True:
         txBlock = await blockchain.Zilliqa.get_current_txblock()
         logging.info(f"Current block number {txBlock}")
