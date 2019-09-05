@@ -178,7 +178,7 @@ class private_api:
     def get_my_active_orders(self, algorithm, market, limit):
 
         ts = self.get_epoch_ms_from_now()
-        params = "algorithm={}&market={}&ts={}&limit={}&op=LT".format(algorithm, market, ts, limit)
+        params = "algorithm={}&market={}&ts={}&limit={}&op=LT&active=true".format(algorithm, market, ts, limit)
 
         return self.request('GET', '/main/api/v2/hashpower/myOrders', params, None)
 
