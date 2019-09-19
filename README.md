@@ -42,8 +42,9 @@ The setup architecture is illustrated in the image shown below. All communicatio
     curl https://ipinfo.io/ip
     ```
     You will be required to connect the Zilliqa CPU nodes running the **Zilliqa Clients** and the mining rigs running **Zilminers** to this proxy server's public IP address.
-    * For the Zilliqa CPU nodes, you have to edit the `constants.xml` file `MINING_PROXY_URL` parameter:
+    * For the Zilliqa CPU nodes, you have to edit the `constants.xml` file `REMOTE_MINE` and `MINING_PROXY_URL` parameter:
         ```yaml
+        <REMOTE_MINE>true</REMOTE_MINE>
         <MINING_PROXY_URL>http://52.220.146.17:4202/api</MINING_PROXY_URL>
     * For the GPU mining rigs, you have to change the input `proxy_ip` to this public IP address when setting up the Zilminers.
         
