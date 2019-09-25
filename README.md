@@ -21,7 +21,7 @@ The setup architecture is illustrated in the image shown below. All communicatio
     ```bash
     git clone https://github.com/DurianStallSingapore/Zilliqa-Mining-Proxy
     cd Zilliqa-Mining-Proxy
-    sudo python setup.py develop
+    sudo python3.7 setup.py develop
     ```
 
 3. Change the settings in the `pool.conf` file for the following:
@@ -50,5 +50,5 @@ The setup architecture is illustrated in the image shown below. All communicatio
         
 5. Run Zilliqa proxy server
     ```bash
-    python start.py
+    python3.7 start.py
     ```
