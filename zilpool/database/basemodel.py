@@ -192,7 +192,7 @@ def init_default_settings(config):
 
     setting = SiteSettings.get_setting()
     if setting is None:
-        logging.critical("No default settings in datebase, create one")
+        logging.critical("No default settings in database, create one")
 
         min_fee = config.mining.get("min_fee", 0.0)
         max_dispatch = config.mining.get("max_dispatch", 10)

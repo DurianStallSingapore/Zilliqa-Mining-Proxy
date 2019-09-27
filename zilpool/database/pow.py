@@ -25,7 +25,7 @@ from zilpool.pyzil import crypto, ethash
 
 from . import miner
 from .basemodel import ModelMixin
-
+from zilpool.stratum.stratum_server import *
 
 class PoWWindow(ModelMixin, mg.Document):
     meta = {"collection": "zil_pow_windows", "strict": False}
@@ -183,7 +183,6 @@ class PowWork(ModelMixin, mg.Document):
         expire_time = start_time + timedelta(seconds=timeout)
         seed = ethash.block_num_to_seed(block_num)
         seed = crypto.bytes_to_hex_str_0x(seed)
-
         return cls.create(
             header=header, seed=seed, boundary=boundary, pow_fee=pow_fee,
             pub_key=pub_key, signature=signature, block_num=block_num,
@@ -211,6 +210,14 @@ class PowWork(ModelMixin, mg.Document):
         if check_expired:
             query = query & Q(expire_time__gte=datetime.utcnow())
         cursor = cls.objects(query).order_by(order)    # default to get the oldest one
+        return cursor.first()
+
+    @classmethod
+    def find_work_by_id(cls, id: object, check_expired=True):
+        query = Q(pk=id)
+        cursor = cls.objects(query)   # default to get the oldest one
+        if check_expired:
+            query = query & Q(expire_time__gte=datetime.utcnow())
         return cursor.first()
 
     @classmethod

@@ -29,7 +29,7 @@ from jsonrpcserver import async_dispatch
 from jsonrpcserver.response import ExceptionResponse
 
 from zilpool import backgound
-
+from zilpool.stratum.stratum_server import *
 
 # setup root logger
 FORMATTER = logging.Formatter(
@@ -42,7 +42,6 @@ rootLogger.setLevel(logging.INFO)
 std_handler = logging.StreamHandler()
 std_handler.setFormatter(FORMATTER)
 rootLogger.addHandler(std_handler)
-
 
 def setup_logging(log_config):
     level = log_config.get("level", "info").upper()
@@ -122,8 +121,24 @@ def update_config(site, config):
             # set auto generated website url
             website_config["url"] = web_url
 
+def add_stratum_protocol():
+    proto = lambda: StratumServerProtocol()
+    return proto
 
-def start_servers(conf_file=None, host=None, port=None):
+async def start_stratum(config):
+    # run stratum server
+    port = config["stratum_server"].get("port", "33456")
+    host = config["stratum_server"].get("host", "0.0.0.0")
+
+    loop = asyncio.get_running_loop()
+    server = await loop.create_server(add_stratum_protocol(), host, port)
+
+    logging.info(f"Stratum server running at: {host}:{port}")
+
+    async with server:
+        await server.serve_forever()
+
+async def start_servers(conf_file=None, host=None, port=None):
     from zilpool.common import utils, mail, blockchain
     from zilpool.database import init_db, connect_to_db
 
@@ -161,12 +176,15 @@ def start_servers(conf_file=None, host=None, port=None):
 
     runner = web.AppRunner(app)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(runner.setup())
+
+    await runner.setup()
+    #loop.run_until_complete(runner.setup())
     site = web.TCPSite(runner, host=host, port=port)
-    loop.run_until_complete(site.start())
+    #loop.run_until_complete(site.start())
+    await(site.start())
 
     # update config
     update_config(site, config)
 
-    # start ioloop
-    loop.run_forever()
+    # start stratum server
+    await start_stratum(config)
