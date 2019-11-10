@@ -52,7 +52,7 @@ class public_api:
 
     def get_active_orders2(self):
         response = self.request('GET', '/main/api/v2/public/orders/active2/', '', None)
-        daggerOrders = [order for order in response if order['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == 'USA']
+        daggerOrders = [order for order in response['list'] if order['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == 'USA']
         return daggerOrders
 
     def buy_info(self):
