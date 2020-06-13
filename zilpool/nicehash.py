@@ -323,7 +323,8 @@ class private_api:
                 retry = 20
                 while retry > 0:
                     retry -= 1
-                    resp = self.set_price_hashpower_order(order_number, top_price + random.uniform(0.001, 0.01), self.config['algo'], self.algorithms)
+                    new_price = round(top_price + random.uniform(0.001, 0.01), 4)
+                    resp = self.set_price_hashpower_order(order_number, new_price, self.config['algo'], self.algorithms)
                     logging.warning(f"NiceHash: set price response {resp}")
                     if "RPC flood detected" not in resp.get("error", ""):
                         break
