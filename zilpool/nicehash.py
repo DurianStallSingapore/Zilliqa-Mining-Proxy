@@ -45,14 +45,14 @@ class public_api:
     def get_global_stats_24(self):
         return self.request('GET', '/main/api/v2/public/stats/global/24h/', '', None)
 
-    def get_active_orders(self):
+    def get_active_orders(self, market):
         response = self.request('GET', '/main/api/v2/public/orders/active/', '', None)
-        daggerOrders = [order for order in response['list'] if order['algorithm']['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == 'USA']
+        daggerOrders = [order for order in response['list'] if order['algorithm']['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == market]
         return daggerOrders
 
-    def get_active_orders2(self):
+    def get_active_orders2(self, market):
         response = self.request('GET', '/main/api/v2/public/orders/active2/', '', None)
-        daggerOrders = [order for order in response['list'] if order['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == 'USA']
+        daggerOrders = [order for order in response['list'] if order['algorithm'] == 'DAGGERHASHIMOTO' and order['market'] == market]
         return daggerOrders
 
     def buy_info(self):
@@ -272,7 +272,7 @@ class private_api:
                             min_limit_speed=0.0, min_accepted_speed=0.0, max_price=None):
         pubAPI = public_api(self.host)
         #result = self.get_orders()
-        full_orders = pubAPI.get_active_orders2()
+        full_orders = pubAPI.get_active_orders2(self.config["location"])
         logging.info(f"full orders: {full_orders}")
         if not full_orders:
             return 2.98
@@ -323,7 +323,8 @@ class private_api:
                 retry = 20
                 while retry > 0:
                     retry -= 1
-                    resp = self.set_price_hashpower_order(order_number, top_price + random.uniform(0.001, 0.01), self.config['algo'], self.algorithms)
+                    new_price = round(top_price + random.uniform(0.001, 0.01), 4)
+                    resp = self.set_price_hashpower_order(order_number, new_price, self.config['algo'], self.algorithms)
                     logging.warning(f"NiceHash: set price response {resp}")
                     if "RPC flood detected" not in resp.get("error", ""):
                         break
