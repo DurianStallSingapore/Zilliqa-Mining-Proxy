@@ -24,7 +24,7 @@ from inspect import isclass
 from cachetools import cached, TTLCache
 
 from mongoengine import connect, Document, OperationError
-from mongoengine.connection import get_db, MongoEngineConnectionError
+from mongoengine.connection import get_db, ConnectionFailure
 
 from zilpool.common.local import LocalProxy
 
@@ -42,7 +42,7 @@ def connect_to_db(config=None):
     try:
         connect(host=uri)
         logging.critical("Database connected!")
-    except MongoEngineConnectionError:
+    except ConnectionFailure:
         logging.fatal("Failed connect to MongoDB!")
         raise
 
